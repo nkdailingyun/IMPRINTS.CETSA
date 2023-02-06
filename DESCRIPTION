@@ -1,12 +1,52 @@
 Package: IMPRINTS.CETSA
-Title: What the Package Does (One Line, Title Case)
+Title: Processing and Visualization of Proteome-wide IMPRINTS-CETSA data
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person("Lingyun", "Dai", , "nkdailingyun@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-9386-5967"))
+Description: This package is designed to process IMRPINTS-CETSA result
+    from TMT labelling and quantification scheme.
+License: MIT + file LICENSE
+Depends: 
+    dplyr (>= 1.0.0),
+    ggplot2 (>= 3.2.0),
+    R (>= 4.0.0),
+    readr (>= 2.0.0),
+    reshape2 (>= 1.4.0)
+Imports: 
+    arrayQualityMetrics,
+    Biobase,
+    drc (>= 3.0),
+    fdrtool,
+    GGally,
+    ggpubr,
+    ggrepel (>= 0.8.0),
+    graphics,
+    grDevices,
+    grid,
+    gridExtra,
+    gridSVG,
+    gtools,
+    limma,
+    MESS,
+    methods,
+    mice,
+    Nozzle.R1,
+    plyr (>= 1.8.0),
+    RColorBrewer,
+    scales,
+    stats,
+    tibble (>= 3.0.0),
+    tidyr (>= 1.2.0),
+    utils,
+    VennDiagram,
+    VIM,
+    XML
+Suggests: 
+    knitr,
+    rmarkdown
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.1
+VignetteBuilder: knitr
+LazyData: true
