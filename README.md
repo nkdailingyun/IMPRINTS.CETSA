@@ -20,19 +20,16 @@ The main tasks can be accompolished in this package include:
 --------------------------------------------------------------------------------------------
 
 ## Prerequisites of installing IMPRINTS.CETSA package
-* R version >= 4.0.0, preferably the most updated version  
-* Rstudio version > 1.0, preferably the most updated version  
-* Dependent packages:  
-    dplyr (>= 1.0.0),
-    ggplot2 (>= 3.2.0),
-    readr (>= 2.0.0),
-    reshape2 (>= 1.4.0)
+* R version >= 4.0.0, preferably the most updated version
+* Rstudio version > 1.0, preferably the most updated version
 * Imported packages:  
     arrayQualityMetrics,
     Biobase,
+    dplyr (>= 1.0.0),
     drc (>= 3.0),
     fdrtool,
     GGally,
+    ggplot2 (>= 3.2.0),
     ggpubr,
     ggrepel (>= 0.8.0),
     graphics,
@@ -48,6 +45,8 @@ The main tasks can be accompolished in this package include:
     Nozzle.R1,
     plyr (>= 1.8.0),
     RColorBrewer,
+    readr (>= 2.0.0),
+    reshape2 (>= 1.4.0),
     scales,
     stats,
     tibble (>= 3.0.0),
