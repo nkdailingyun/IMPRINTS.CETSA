@@ -32,17 +32,20 @@ getProteinName <- function(x, pfdatabase=FALSE) {
 
 combineProteinGeneName <- function(data, printBothName, printGeneName, pfdatabase=FALSE) {
   if (printBothName) {
-    data <- data %>% rowwise() %>% mutate(description1 = getProteinName(description, pfdatabase)) %>%
-      mutate(description2 = getGeneName(description, pfdatabase)) %>%
-      mutate(id = paste(id, description1, description2, sep="\n"))
+    data <- data %>% dplyr::rowwise() %>%
+      dplyr::mutate(description1 = getProteinName(description, pfdatabase)) %>%
+      dplyr::mutate(description2 = getGeneName(description, pfdatabase)) %>%
+      dplyr::mutate(id = paste(id, description1, description2, sep="\n"))
     data$description1<-NULL
     data$description2<-NULL
   } else if (printGeneName) {
-    data <- data %>% rowwise() %>% mutate(description = getGeneName(description, pfdatabase)) %>%
-      mutate(id = paste(id, description, sep="\n"))
+    data <- data %>% dplyr::rowwise() %>%
+      dplyr::mutate(description = getGeneName(description, pfdatabase)) %>%
+      dplyr::mutate(id = paste(id, description, sep="\n"))
   } else {
-    data <- data %>% rowwise() %>% mutate(description = getProteinName(description, pfdatabase)) %>%
-      mutate(id = paste(id, description, sep="\n"))
+    data <- data %>% dplyr::rowwise() %>%
+      dplyr::mutate(description = getProteinName(description, pfdatabase)) %>%
+      dplyr::mutate(id = paste(id, description, sep="\n"))
   }
   data$description<-NULL
   return(data)

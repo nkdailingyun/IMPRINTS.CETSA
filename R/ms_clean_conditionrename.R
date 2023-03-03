@@ -13,8 +13,6 @@
 #' @param remsinglecondprot whether the orphan proteins that appear only in
 #' one of the datasets should be removed, default set to FALSE
 #'
-#' @import dplyr
-#'
 #' @export
 #' @return a dataframe after clean-up
 #' @examples \dontrun{
@@ -38,7 +36,7 @@ ms_clean <- function(data, nread=10, remkeratin=TRUE, remserum=TRUE,
     data <- data[-which(row_na), ]
     ms_filewrite(data_na, paste0(dataname, "_Missing Values.txt"), outdir=outdir)
   } else {
-    print("Your data is complete in quantification, there is no NA values!")
+    message("Your data is complete in quantification, there is no NA values!")
   }
 
   # remove single condition proteins if desired
@@ -83,7 +81,7 @@ ms_clean <- function(data, nread=10, remkeratin=TRUE, remserum=TRUE,
       stop("After removing Trypsin the dataset is empty.")
     }
   }
-  print(paste("The data composition under each experimental condition (after cleanup) is:"))
+  message(paste("The data composition under each experimental condition (after cleanup) is:"))
   print(table(data$condition))
   if (length(attr(data,"outdir"))==0  & length(outdir)>0) {
     attr(data,"outdir") <- outdir
@@ -100,7 +98,6 @@ ms_clean <- function(data, nread=10, remkeratin=TRUE, remserum=TRUE,
 #' @param data dataset of which the condition names to be customized
 #' @param incondition a vector of current condition naming to be changed
 #' @param outcondition a vector of new condition naming to be applied
-#'
 #'
 #' @export
 #' @return a dataframe after condition name customization
@@ -125,7 +122,7 @@ ms_conditionrename <- function(data, incondition=NULL, outcondition=NULL) {
       data$condition <- gsub(paste0("^",incondition[i],"$"), as.character(outcondition[i]), data$condition)
     }
   }
-  cat("The data composition under each experimental condition (after renaming) is:\n")
+  message("The data composition under each experimental condition (after renaming) is:")
   print(table(data$condition))
   return(data)
 }

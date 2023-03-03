@@ -8,7 +8,8 @@
 #' @param percondition whether do the imputation on each condition separately, default
 #' set to FALSE, to be implemented
 #'
-#' @import dplyr mice VIM tidyr
+#' @import mice
+#' @import VIM
 #' @export
 #' @return a dataframe
 #' @examples \dontrun{
@@ -29,12 +30,12 @@ imprints_imputation <- function(data, iteration=3, method="norm.predict",
     data$description <- NULL
   }
   if (length(grep("countNum", names(data)))) {
-    countinfo <- unique(data[ ,c("id","sumUniPeps","sumPSMs","countNum")])
-    data <- data[ ,!(names(data) %in% c("sumUniPeps","sumPSMs","countNum"))]
+    countinfo <- unique(data[ ,stringr::str_which(names(data), "^id$|^sumPSM|^countNum|^sumUniPeps")])
+    data <- data[ ,-stringr::str_which(names(data), "^sumPSM|^countNum|^sumUniPeps")]
   }
 
   pdf(file = paste0(format(Sys.time(), "%y%m%d_%H%M_"),dataname,"missingness_pre.pdf"), width=14, height=6)
-  md.pattern(data[,-1], rotate.names=TRUE)
+  mice::md.pattern(data[,-1], rotate.names=TRUE)
   dev.off()
 
   data1 <- data[,-1]
@@ -44,12 +45,12 @@ imprints_imputation <- function(data, iteration=3, method="norm.predict",
   names(imp2)[c(1:2)] <- c("imp","id")
   imp2$id <- data$id
   imp3 <- gather(imp2, condition, reading, -imp, -id)
-  imp4 <- imp3 %>% group_by(id,condition) %>% summarise(reading=mean(reading,na.rm=T))
-  imp4 <- spread(imp4, condition, reading)
+  imp4 <- imp3 %>% dplyr::group_by(id,condition) %>% dplyr::summarise(reading=mean(reading,na.rm=T))
+  imp4 <- tidyr::spread(imp4, condition, reading)
   names(imp4) <- gsub("TEMP","",names(imp4))
 
   pdf(file = paste0(format(Sys.time(), "%y%m%d_%H%M_"),dataname,"missingness_post.pdf"), width=14, height=6)
-  md.pattern(imp4[,-1], rotate.names=TRUE)
+  mice::md.pattern(imp4[,-1], rotate.names=TRUE)
   dev.off()
   cat("Done...\n")
 
@@ -57,7 +58,7 @@ imprints_imputation <- function(data, iteration=3, method="norm.predict",
     cat("To exclude any observations that still contain missing values after imputation...\n")
     imp4 <- na.exclude(imp4)
     pdf(file = paste0(format(Sys.time(), "%y%m%d_%H%M_"),dataname,"missingness_final.pdf"), width=14, height=6)
-    md.pattern(imp4[,-1], rotate.names=TRUE)
+    mice::md.pattern(imp4[,-1], rotate.names=TRUE)
     dev.off()
     cat("Done...\n")
   }

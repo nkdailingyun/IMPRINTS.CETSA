@@ -13,7 +13,7 @@
 #'
 #' @keywords internal
 #'
-#' @import dplyr Biobase
+#' @importFrom Biobase fData pData ExpressionSet
 #' @return a dataframe
 #' @examples \dontrun{
 #' }
@@ -44,10 +44,10 @@ ms_to_eSet <- function(data, matrixonly=FALSE, proteininfo=NULL, nread=NULL,
     #return(list(data=data, proteininfo=proteininfo))
 
     if (length(proteininfo)==0) {
-      stop ("missing a support dataframe with matched id and protein information.")
+      stop("missing a support dataframe with matched id and protein information.")
     }
     if (length(setdiff(data$id, proteininfo$id))) {
-      stop ("make sure the provided dataframe is complete.")
+      stop("make sure the provided dataframe is complete.")
     }
 
     data <- merge(proteininfo, data, by="id")
@@ -85,7 +85,7 @@ ms_to_eSet <- function(data, matrixonly=FALSE, proteininfo=NULL, nread=NULL,
     fdata <- data[ ,-c(1,3:(nread+2))]
     row.names(fdata) <- data$id
   } else {
-    fdata <- fData(refeset)
+    fdata <- Biobase::fData(refeset)
   }
   metadata <- data.frame(labelDescription=names(fdata),
                          row.names=names(fdata))
@@ -101,10 +101,10 @@ ms_to_eSet <- function(data, matrixonly=FALSE, proteininfo=NULL, nread=NULL,
                         abstract="ExpressionSet format",
                         other=list(notes=""))
 
-  eSet <- ExpressionSet(assayData=exprs,
-                        phenoData=phenodata,
-                        featureData=featuredata,
-                        experimentData=experimentData)
+  eSet <- Biobase::ExpressionSet(assayData=exprs,
+                                phenoData=phenodata,
+                                featureData=featuredata,
+                                experimentData=experimentData)
 
   return(eSet)
 }
@@ -118,7 +118,7 @@ ms_to_eSet <- function(data, matrixonly=FALSE, proteininfo=NULL, nread=NULL,
 #'
 #' @keywords internal
 #'
-#' @import Biobase
+#' @importFrom Biobase fData pData ExpressionSet
 #' @return a dataframe
 #' @examples \dontrun{
 #' }

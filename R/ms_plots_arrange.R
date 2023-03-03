@@ -15,11 +15,9 @@
 #' @param pdfwidth a number indicate the width of pdf file, default value 12
 #'
 #'
-#' @import tidyr
-#' @import dplyr
 #' @import RColorBrewer
 #' @import ggplot2
-#' @import gridExtra
+#' @importFrom gridExtra grid.arrange arrangeGrob
 #'
 #' @export
 #' @keywords internal
@@ -31,8 +29,8 @@
 #'
 #'
 
-ms_plots_arrange <- function(plotlist, innerlayout=NULL, mainlayout=c(4,1), external=TRUE,
-                             toplabel="", leftlabel="", bottomlabel="",
+ms_plots_arrange <- function(plotlist, innerlayout=NULL, mainlayout=c(4,1),
+                             external=TRUE, toplabel="", leftlabel="", bottomlabel="",
                              pdfname="mixed_ggplotting.pdf",
                              pdfheight=12, pdfwidth=10, returnplots=FALSE) {
 
@@ -46,17 +44,21 @@ ms_plots_arrange <- function(plotlist, innerlayout=NULL, mainlayout=c(4,1), exte
   if (length(plotlist)==2) {
     innerlayout = c(1,2)
     for (name in names) {
-      plots[[name]] <- grid.arrange(plot1[[name]], plot2[[name]], ncol=innerlayout[2], nrow=innerlayout[1])
+      plots[[name]] <- gridExtra::grid.arrange(plot1[[name]], plot2[[name]],
+                                               ncol=innerlayout[2], nrow=innerlayout[1])
     }
   } else if (length(plotlist)==3) {
     innerlayout = c(1,3)
     for (name in names) {
-      plots[[name]] <- grid.arrange(plot1[[name]], plot2[[name]], plot3[[name]], ncol=innerlayout[2], nrow=innerlayout[1])
+      plots[[name]] <- gridExtra::grid.arrange(plot1[[name]], plot2[[name]], plot3[[name]],
+                                               ncol=innerlayout[2], nrow=innerlayout[1])
     }
   } else if (length(plotlist)==4) {
     innerlayout = c(1,4)
     for (name in names) {
-      plots[[name]] <- grid.arrange(plot1[[name]], plot2[[name]], plot3[[name]], plot4[[name]], ncol=innerlayout[2], nrow=innerlayout[1])
+      plots[[name]] <- gridExtra::grid.arrange(plot1[[name]], plot2[[name]],
+                                               plot3[[name]], plot4[[name]],
+                                               ncol=innerlayout[2], nrow=innerlayout[1])
     }
   }
   # print(class(plots[[1]]))
@@ -80,15 +82,15 @@ ms_plots_arrange <- function(plotlist, innerlayout=NULL, mainlayout=c(4,1), exte
   class(pl) <- c("arrangelist", "ggplot", class(pl))
   pdfname <- gsub("/", " ", pdfname)
   if (length(outdir)) {
-    ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M_"), pdfname),
+    ggplot2::ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M_"), pdfname),
            pl, height=pdfheight, width=pdfwidth)
   } else {
-    ggsave(file=paste0(format(Sys.time(), "%y%m%d_%H%M_"), pdfname), pl,
+    ggplot2::ggsave(file=paste0(format(Sys.time(), "%y%m%d_%H%M_"), pdfname), pl,
            height=pdfheight, width=pdfwidth)
   }
 
   if (external) { external_graphs(F) } # switch off the external graphs
-  print("IMPRINTS-CETSA bar plot file generated successfully.")
+  message("IMPRINTS-CETSA bar plot file generated successfully.")
 }
 
 

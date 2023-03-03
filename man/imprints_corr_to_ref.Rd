@@ -9,8 +9,10 @@ imprints_corr_to_ref(
   set = NULL,
   treatment = NULL,
   reference = NULL,
-  corr_threshold = 0.8,
-  include_neg = FALSE
+  use_score = c("euclidean", "pearson"),
+  score_threshold = 0.9,
+  include_neg = FALSE,
+  max_na = 0
 )
 }
 \arguments{
@@ -24,17 +26,19 @@ the columns with readings are named in the format like "(Set_)37C_Treatment"}
 
 \item{reference}{a numeric vector with the profile readings}
 
-\item{corr_threshold}{a numeric value to indicate the threshold, default set to 0.8}
+\item{use_score}{a single character element that define the method score. Method available : 'euclidean' or 'pearson'}
 
-\item{include_neg}{whether to include the negatively correlated proteins,
-default set to FALSE}
+\item{score_threshold}{a numeric value to indicate the correlation score threshold, default set to 0.9}
+
+\item{include_neg}{whether to include the negatively correlated proteins, default set to FALSE}
+
+\item{max_na}{an integer indicating the maximum number of missing value for one protein, default is 0}
 }
 \value{
-a dataframe
+a dataframe with the correlation from the profile and the proteins which passed the threshold
 }
 \description{
-Function to find out the proteins with most similar profile to the reference profile,
-using the Pearson correlation metric
+Function to find out the proteins with most similar profile to the reference profile
 }
 \examples{
 \dontrun{

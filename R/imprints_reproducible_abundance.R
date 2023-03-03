@@ -13,7 +13,6 @@
 #' @param returnlist whether to return as list but not as dataframe,
 #' default set to FALSE
 #'
-#' @import dplyr Biobase
 #' @import ggpubr
 #' @import ggrepel
 #' @export
@@ -31,13 +30,12 @@ imprints_reproducible_abundance <- function(data, set=NULL, treatment=NULL,
   data <- ms_directory(data, dataname)$data
   data_copy <- data
 
-  if (length(grep("countNum", names(data)))) {
-    countinfo <- unique(data[ ,c("id","sumUniPeps","sumPSMs","countNum")])
-    data <- data[ ,!(names(data) %in% c("sumUniPeps","sumPSMs","countNum"))]
-  }
-
   if (length(grep("description", names(data)))) {
     proteininfo <- unique(data[ ,c("id","description")])
+  }
+  if (length(grep("countNum", names(data)))) {
+    countinfo <- unique(data[ ,stringr::str_which(names(data), "^id$|^sumPSM|^countNum|^sumUniPeps")])
+    data <- data[ ,-stringr::str_which(names(data), "^sumPSM|^countNum|^sumUniPeps")]
   }
 
   if (length(set)==1) { data <- data[ ,c(1,2,grep(set,names(data)))] }
@@ -52,18 +50,18 @@ imprints_reproducible_abundance <- function(data, set=NULL, treatment=NULL,
     datal2 <- list()
     for (i in unique(datal1$treatment)) {
       datal_temp <- subset(datal1, treatment==i)
-      print(paste0("in condition: ", i))
-      datal_score <- datal_temp %>% group_by(id, set, treatment, temperature) %>%
-        summarize(mreading=mean(reading,na.rm=T), sdreading=sd(reading, na.rm=T)) %>%
-        group_by(id) %>% mutate(cvreading=sqrt(exp(sdreading^2)-1)) %>% group_by(id) %>%
-        mutate(mcvreading=mean(cvreading,na.rm=T))
+      message(paste0("in condition: ", i))
+      datal_score <- datal_temp %>% dplyr::group_by(id, set, treatment, temperature) %>%
+        dplyr::summarise(mreading=mean(reading,na.rm=T), sdreading=sd(reading, na.rm=T)) %>%
+        dplyr::group_by(id) %>% dplyr::mutate(cvreading=sqrt(exp(sdreading^2)-1)) %>%
+        dplyr::group_by(id) %>% dplyr::mutate(mcvreading=mean(cvreading,na.rm=T))
       write.csv(datal_score, paste0(outdir,"/",format(Sys.time(),"%y%m%d_%H%M_"),i,"_abundance_CV.csv"), row.names=F)
-      datal_score <- datal_score %>% group_by(id) %>% summarise(mcv=mean(mcvreading,na.rm=T))
+      datal_score <- datal_score %>% dplyr::group_by(id) %>% summarise(mcv=mean(mcvreading,na.rm=T))
       q <- ggpubr::ggdensity(datal_score, x="mcv", fill="lightgray", add="median", rug=F, xlab="CV", title=as.character(i))
-      ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M"), "_", i, "_abundance_CV.pdf"), q, width=4, height=4)
+      ggplot2::ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M"), "_", i, "_abundance_CV.pdf"), q, width=4, height=4)
       reproducible1 <- datal_score %>% filter(mcv<=cvthreshold)
-      print(paste0(nrow(reproducible1), " proteins passed the cv cutoff..."))
-      print(paste0("The median + 2*MAD cutoff of CV is ", round(median(datal_score$mcv,na.rm=T)+2*mad(datal_score$mcv,na.rm=T),3)))
+      message(paste0(nrow(reproducible1), " proteins passed the cv cutoff."))
+      message(paste0("The median + 2*MAD cutoff of CV is ", round(median(datal_score$mcv,na.rm=T)+2*mad(datal_score$mcv,na.rm=T),3)))
       datal_temp <- subset(datal_temp, id %in% reproducible1$id)
       datal_temp <- tidyr::unite(datal_temp, condition, temperature, replicate, treatment, sep="_")
       datal_temp <- tidyr::spread(datal_temp, condition, reading)
@@ -82,18 +80,18 @@ imprints_reproducible_abundance <- function(data, set=NULL, treatment=NULL,
     datal2 <- list()
     for (i in unique(datal1$treatment)) {
       datal_temp <- subset(datal1, treatment==i)
-      print(paste0("in condition: ", i))
-      datal_score <- datal_temp %>% group_by(id, treatment, temperature) %>%
-        summarize(mreading=mean(reading,na.rm=T), sdreading=sd(reading, na.rm=T)) %>%
-        group_by(id) %>% mutate(cvreading=sqrt(exp(sdreading^2)-1)) %>% group_by(id) %>%
-        mutate(mcvreading=mean(cvreading,na.rm=T))
+      message(paste0("in condition: ", i))
+      datal_score <- datal_temp %>% dplyr::group_by(id, treatment, temperature) %>%
+        dplyr::summarise(mreading=mean(reading,na.rm=T), sdreading=sd(reading, na.rm=T)) %>%
+        dplyr::group_by(id) %>% dplyr::mutate(cvreading=sqrt(exp(sdreading^2)-1)) %>%
+        dplyr::group_by(id) %>% mutate(mcvreading=mean(cvreading,na.rm=T))
       write.csv(datal_score, paste0(outdir,"/",format(Sys.time(),"%y%m%d_%H%M_"),i,"_abundance_CV.csv"), row.names=F)
       datal_score <- datal_score %>% group_by(id) %>% summarise(mcv=mean(mcvreading,na.rm=T))
       q <- ggpubr::ggdensity(datal_score, x="mcv", fill="lightgray", add="median", rug=F, xlab="CV", title=as.character(i))
-      ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M"), "_", i, "_abundance_CV.pdf"), q, width=4, height=4)
-      reproducible1 <- datal_score %>% filter(mcv<=cvthreshold)
-      print(paste0(nrow(reproducible1), " proteins passed the cv cutoff..."))
-      print(paste0("The median + 2*MAD cutoff of CV is ", round(median(datal_score$mcv,na.rm=T)+2*mad(datal_score$mcv,na.rm=T),3)))
+      ggplot2::ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M"), "_", i, "_abundance_CV.pdf"), q, width=4, height=4)
+      reproducible1 <- datal_score %>% dplyr::filter(mcv<=cvthreshold)
+      message(paste0(nrow(reproducible1), " proteins passed the cv cutoff."))
+      message(paste0("The median + 2*MAD cutoff of CV is ", round(median(datal_score$mcv,na.rm=T)+2*mad(datal_score$mcv,na.rm=T),3)))
       datal_temp <- subset(datal_temp, id %in% reproducible1$id)
       datal_temp <- tidyr::unite(datal_temp, condition, temperature, replicate, treatment, sep="_")
       datal_temp <- tidyr::spread(datal_temp, condition, reading)

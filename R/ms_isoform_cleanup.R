@@ -6,13 +6,12 @@
 #'
 #' @param data dataset to be clead-up from isoform ambiguity
 #'
-#' @import dplyr
+#' @importFrom dplyr filter group_by left_join mutate n rowwise summarise top_n ungroup
 #' @export
 #' @return a dataframe
 #' @examples \dontrun{
 #' data_cleaned1 <- ms_isoform_resolve(data_cleaned)
 #' }
-#'
 #'
 
 ms_isoform_resolve <- function(data) {
@@ -39,22 +38,25 @@ ms_isoform_resolve <- function(data) {
   #return(questionid)
   uniqueid1 <- setdiff(uniqueid, questionid)
 
-  counttable <- data %>% group_by(id) %>% summarize(count=n())
+  counttable <- data %>% dplyr::group_by(id) %>% dplyr::summarise(count=dplyr::n())
   counttable$uniid <- gsub("-[0-9]+", "", counttable$id)
 
   # to look for the isoforms could be automatically resolved based on parsimony principle
   counttable1 <- subset(counttable, uniid %in% uniqueid1)
-  counttable2 <- counttable1 %>% group_by(uniid) %>% mutate(unicount=n()) %>%
-    filter(unicount>1) %>% arrange(uniid, desc(count))
+  counttable2 <- counttable1 %>% dplyr::group_by(uniid) %>%
+    dplyr::mutate(unicount=dplyr::n()) %>%
+    dplyr::filter(unicount>1) %>%
+    dplyr::arrange(uniid, desc(count))
   #return(counttable2)
-  resolvetable <- counttable2 %>% top_n(1, count) %>% filter(!duplicated(uniid))#top_n(-1, id)
+  resolvetable <- counttable2 %>% dplyr::top_n(1, count) %>%
+    dplyr::filter(!duplicated(uniid))#top_n(-1, id)
   # note the problem with ranking of character column
   resolvetable <- merge(resolvetable, unique(data[ ,c(1,2)]), all.x=TRUE)
   ambitable <- counttable2[ ,c(1:2)]
   ambitable <- merge(ambitable, unique(data[ ,c(1,2)]), all.x=TRUE)
   names(ambitable)[c(1:2)] <- c("isoforms", "frequency")
-  cat(nrow(ambitable), "Isoforms were identified from dataset", dataname, ".\n")
-  cat("Check out the details in the current working directory.\n")
+  message(nrow(ambitable), " protein isoforms were identified from dataset ", dataname, ".")
+  message("Check out the details in the current working directory.")
   write.table(ambitable, paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M_"), dataname, "_solved_isoforms.txt"),
               sep="\t", row.names=FALSE, quote=FALSE)
 
@@ -65,7 +67,7 @@ ms_isoform_resolve <- function(data) {
     data[grep(paste0("^", id), data$id), c(1,2)] <- names[c(1,3)]
   }
 
-  cat(nrow(ambitable), "Isoforms were solved.\n")
+  message(nrow(ambitable), " protein isoforms were successfully resolved.")
   message("To further solve isoform ambiguity, proceed to use ms_isoform_consolidate() function.")
 
   questionid_pos <- NULL
@@ -74,19 +76,20 @@ ms_isoform_resolve <- function(data) {
     #questionid_full <- c(questionid_full, unique(grep(id, data$id, value=TRUE)))
   }
   questionid_table <- data[questionid_pos, ]
-  questionid_table2 <- questionid_table %>% group_by(id) %>%
-    summarize(frequency=n(), totalCountNum=sum(countNum), uniid=unique(id)) %>%
-    arrange(id, desc(totalCountNum))
+  questionid_table2 <- questionid_table %>% dplyr::group_by(id) %>%
+    dplyr::summarise(frequency=dplyr::n(), totalCountNum=sum(countNum), uniid=unique(id)) %>%
+    dplyr::arrange(id, desc(totalCountNum))
   questionid_table2$uniid <- gsub("-[0-9]+", "", questionid_table2$uniid)
-  questionid_table3 <- questionid_table2 %>% group_by(uniid) %>%
-    top_n(1, frequency) %>% top_n(1, totalCountNum) %>% filter(frequency != ncondition)
+  questionid_table3 <- questionid_table2 %>% dplyr::group_by(uniid) %>%
+    dplyr::top_n(1, frequency) %>% dplyr::top_n(1, totalCountNum) %>%
+    dplyr::filter(frequency != ncondition)
   questionid_table3 <- questionid_table3[ ,c(1,4)]
   names(questionid_table3) <- c("Tobe_id","groupid")
   questionid_table4 <- merge(questionid_table2, questionid_table3, by.x="uniid", by.y="groupid")
   questionid_table4$uniid <- NULL
 
-  cat(nrow(questionid_table3), "base IDs were found with possible protein grouping ambuiguity.\n")
-  cat("Carefully check and modify the suggested to_be_consoidated matching table in the working directory.\n")
+  message(nrow(questionid_table3), " base IDs were found with possible protein grouping ambuiguity.")
+  message("Carefully check and modify if necessary the suggested to_be_consoidated matching table.")
 
   write.table(questionid_table4, paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M_"), dataname, "_tobe_consolidated.txt"),
               sep="\t", row.names=FALSE, quote=FALSE)
@@ -119,8 +122,6 @@ ms_isoform_resolve <- function(data) {
 #' @importFrom tibble as_tibble
 #' @importFrom gtools mixedorder mixedsort
 #' @importFrom plyr . ddply
-#' @import dplyr
-#' @import tidyr
 #' @export
 #' @return a dataframe
 #' @examples \dontrun{
@@ -129,7 +130,6 @@ ms_isoform_resolve <- function(data) {
 #' data_cleaned2 <- ms_isoform_consolidate(data_cleaned1,
 #'               matchtable="./subfolder/tobe_consolidated.txt", withabd=TRUE)
 #' }
-#'
 #'
 
 ms_isoform_consolidate <- function(data, matchtable, nread=10, withabd=FALSE, weightbycountnum=TRUE) {
@@ -204,14 +204,14 @@ ms_isoform_consolidate <- function(data, matchtable, nread=10, withabd=FALSE, we
 #' @param data dataset to be matched to reference dataset to relieve the problem of isoform ambiguity
 #' @param refdata dataset used as the check reference, typically the IMPRINTS dataset
 #'
-#' @import dplyr
+#' @importFrom dplyr filter group_by left_join mutate rowwise summarise top_n ungroup
 #' @export
 #' @return a dataframe
 #' @examples \dontrun{
 #' data_meltcurve1 <- ms_isoform_match(data_meltcurve, data_IMPRINTS)
 #' }
 #'
-#'
+
 ms_isoform_match <- function(data, refdata) {
 
   # add variable name to output
@@ -229,17 +229,25 @@ ms_isoform_match <- function(data, refdata) {
   #print(intersect(ambiuniqueid, commonidunique))
   ambiuniqueid1 <- setdiff(ambiuniqueid, commonidunique) # to remove the already matched isoform
   ambiuniqueid2 <- intersect(ambiuniqueid1, commonuniqueid) # to keep the ones with possible isoform
-  cat(length(ambiuniqueid2), "isoforms were found with possible matches.\n")
+  message(length(ambiuniqueid2), " isoforms were found with possible matches.")
 
   refdata$uniid <- gsub("-[0-9]+", "", refdata$id)
   refdata1 <- subset(refdata, uniid%in%ambiuniqueid2)
   # when there is multiple matches, keep the one with maximal countNum
-  refdata1 <- refdata1 %>% group_by(uniid) %>% top_n(1, countNum) %>% top_n(1, sumPSMs) %>% ungroup()
+  refdata1 <- refdata1 %>%
+    dplyr::group_by(uniid) %>%
+    dplyr::top_n(1, countNum) %>%
+    dplyr::top_n(1, sumPSMs) %>%
+    dplyr::ungroup()
   #print(nrow(refdata1))
   data$uniid <- gsub("-[0-9]+", "", data$id)
   data1 <- subset(data, uniid%in%ambiuniqueid2)
   # when there is multiple matches, keep the one with maximal countNum
-  data1 <- data1 %>% group_by(uniid) %>% top_n(1, countNum) %>% top_n(1, sumPSMs) %>% ungroup()
+  data1 <- data1 %>%
+    dplyr::group_by(uniid) %>%
+    dplyr::top_n(1, countNum) %>%
+    dplyr::top_n(1, sumPSMs) %>%
+    dplyr::ungroup()
   #print(nrow(data1))
 
   matchtable <- merge(data1[,c("id","description","uniid")],refdata1[,c("id","description","uniid")],by="uniid")

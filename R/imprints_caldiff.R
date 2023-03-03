@@ -7,7 +7,7 @@
 #' @param withinrep whether the calculation of the relative protein abundance difference should
 #' still within the same biorep, default set to TRUE, when the bioreps are balanced
 #'
-#' @import dplyr Biobase
+#' @importFrom tidyr expand gather separate unite
 #' @export
 #' @return a dataframe
 #' @examples \dontrun{
@@ -19,7 +19,6 @@
 imprints_caldiff <- function(data, reftreatment=NULL, withinrep=TRUE) {
 
   options(digits = 5)
-
   dataname <- deparse(substitute(data))
   outdir <- ms_directory(data, dataname)$outdir
   data <- ms_directory(data, dataname)$data
@@ -27,19 +26,23 @@ imprints_caldiff <- function(data, reftreatment=NULL, withinrep=TRUE) {
   if (length(reftreatment)==0) {
     stop("Need to specify the reference condition")
   }
+  reftreatment_name <- grep(paste0("_", reftreatment, "$"), colnames(data), value = TRUE)
+  if (!length(reftreatment_name)) {
+    stop("Need to specify a right treatment condition as reference")
+  }
   if (length(grep("description", names(data)))) {
     proteininfo <- unique(data[ ,c("id","description")])
     data$description <- NULL
   }
   if (length(grep("countNum", names(data)))) {
-    countinfo <- unique(data[ ,c("id","sumUniPeps","sumPSMs","countNum")])
-    data <- data[ ,!(names(data) %in% c("sumUniPeps","sumPSMs","countNum"))]
+    countinfo <- unique(data[ ,stringr::str_which(names(data), "^id$|^sumPSM|^countNum|^sumUniPeps")])
+    data <- data[ ,-stringr::str_which(names(data), "^sumPSM|^countNum|^sumUniPeps")]
   }
 
-  data <- gather(data, condition, reading, -id)
+  data <- tidyr::gather(data, condition, reading, -id)
   if (length(unlist(strsplit(data$condition[1], "_")))==4) {
     data <- tidyr::separate(data, condition, into=c("set","temperature","replicate","treatment"), sep="_")
-    if(sum(grepl(reftreatment, sort(unique(data$treatment))))!=1) {
+    if (sum(grepl(reftreatment, sort(unique(data$treatment))))!=1) {
       stop("Need to specify a right treatment condition as reference")
     }
     treatmentlevel <- c(reftreatment,setdiff(unique(data$treatment),reftreatment))
@@ -91,6 +94,5 @@ imprints_caldiff <- function(data, reftreatment=NULL, withinrep=TRUE) {
     attr(data1,"outdir") <- outdir
   }
   ms_filewrite(data1, paste0(dataname,"_","imprints_caldiff.txt"), outdir=outdir)
-
   return(data1)
 }

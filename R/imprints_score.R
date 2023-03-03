@@ -29,7 +29,7 @@
 #' @param labelcategory the categories of nodes to label, default value is c("CC","NC","CN")
 #' @param labelgeneid a vector of the gene symbol id to show on the plot, exclusive from labelcategory
 #'
-#' @import dplyr fdrtool
+#' @import fdrtool
 #' @export
 #' @return a dataframe
 #' @examples \dontrun{
@@ -57,40 +57,40 @@ imprints_score <- function(data, format="9", basetemp="37C", basecvcheck=FALSE, 
     data$description <- NULL
   }
   if (length(grep("countNum", names(data)))) {
-    countinfo <- unique(data[ ,c("id","sumUniPeps","sumPSMs","countNum")])
-    data <- data[ ,!(names(data) %in% c("sumUniPeps","sumPSMs","countNum"))]
+    countinfo <- unique(data[ ,stringr::str_which(names(data), "^id$|^sumPSM|^countNum|^sumUniPeps")])
+    data <- data[ ,-stringr::str_which(names(data), "^sumPSM|^countNum|^sumUniPeps")]
   }
 
   refcol <- which(apply(data[,-1],2,sum,na.rm=T)==0)
-  data <- gather(data[ ,-(refcol+1)], condition, reading, -id)
+  data <- tidyr::gather(data[ ,-(refcol+1)], condition, reading, -id)
   if (length(unlist(strsplit(data$condition[1], "_")))==4) {
     data <- tidyr::separate(data, condition, into=c("set","temperature","replicate","treatment"), sep="_")
-    data_abd <- data %>% group_by(id, set, treatment) %>%
-      filter(temperature==basetemp) %>%
-      summarise(abundance.score=mean(reading,na.rm=T),
+    data_abd <- data %>% dplyr::group_by(id, set, treatment) %>%
+      dplyr::filter(temperature==basetemp) %>%
+      dplyr::summarise(abundance.score=mean(reading,na.rm=T),
                 abundance.score.cv=sd(reading,na.rm=T)/exp(abs(abundance.score)))
     baseCVcutoff <- mean(data_abd$abundance.score.cv,na.rm=T)+
       cvcutoffthreshold*sd(data_abd$abundance.score.cv,na.rm=T)
-    data_thermal <- data %>% left_join(data_abd) %>% rowwise() %>%
-      mutate(stability=reading-abundance.score) %>% filter(temperature!=basetemp)
+    data_thermal <- data %>% dplyr::left_join(data_abd,by=c("id","treatment")) %>% dplyr::rowwise() %>%
+      dplyr::mutate(stability=reading-abundance.score) %>% dplyr::filter(temperature!=basetemp)
     data_thermal1 <- data_thermal %>% group_by(id,set,treatment,temperature) %>%
-      summarise(stability.score=mean(stability,na.rm=T),
+      dplyr::summarise(stability.score=mean(stability,na.rm=T),
                 stability.score.cv=sd(stability,na.rm=T)/exp(abs(stability.score)))
     data_thermal1t <- na.omit(data_thermal) %>% group_by(id,set,treatment,temperature) %>%
-      summarise(stability.score.t=t.test(stability)$statistic)
+      dplyr::summarise(stability.score.t=t.test(stability)$statistic)
     data_thermal1 <- merge(data_thermal1, data_thermal1t, all.x=T)
     if (weightbycv) {
-      data_thermal2 <- data_thermal1 %>% group_by(id,set,treatment) %>%
-        summarise(stability.score.mean=weighted.mean(stability.score,log(1/stability.score.cv),na.rm=T))
+      data_thermal2 <- data_thermal1 %>% dplyr::group_by(id,set,treatment) %>%
+        dplyr::summarise(stability.score.mean=weighted.mean(stability.score,log(1/stability.score.cv),na.rm=T))
     } else {
-      data_thermal2 <- data_thermal1 %>% group_by(id,set,treatment) %>%
-        summarise(stability.score.mean=mean(stability.score,na.rm=T))
+      data_thermal2 <- data_thermal1 %>% dplyr::group_by(id,set,treatment) %>%
+        dplyr::summarise(stability.score.mean=mean(stability.score,na.rm=T))
     }
-    data_thermal1.score <- mutate(data_thermal1, temperature=paste("stability.score",temperature,sep="."))
+    data_thermal1.score <- dplyr::mutate(data_thermal1, temperature=paste("stability.score",temperature,sep="."))
     data_thermal1.score <- tidyr::spread(data_thermal1.score[,-c(6:7)], temperature, stability.score)
-    data_thermal1.t <- mutate(data_thermal1, temperature=paste0("stability.score.",temperature,".t"))
+    data_thermal1.t <- dplyr::mutate(data_thermal1, temperature=paste0("stability.score.",temperature,".t"))
     data_thermal1.t <- tidyr::spread(data_thermal1.t[,-c(5:6)], temperature, stability.score.t)
-    data_thermal1.cv <- mutate(data_thermal1, temperature=paste0("stability.score.",temperature,".cv"))
+    data_thermal1.cv <- dplyr::mutate(data_thermal1, temperature=paste0("stability.score.",temperature,".cv"))
     data_thermal1.cv.cutoff <- mean(data_thermal1.cv$stability.score.cv,na.rm=T)+
       cvcutoffthreshold*sd(data_thermal1.cv$stability.score.cv,na.rm=T)
     data_thermal1.cv <- tidyr::spread(data_thermal1.cv[,-c(5,7)], temperature, stability.score.cv)
@@ -102,33 +102,33 @@ imprints_score <- function(data, format="9", basetemp="37C", basecvcheck=FALSE, 
     #data1 <- tidyr::unite(data1, condition, set, temperature, replicate, treatment, sep="_")
   } else if (length(unlist(strsplit(data$condition[1], "_")))==3) {
     data <- tidyr::separate(data, condition, into=c("temperature","replicate","treatment"), sep="_")
-    data_abd <- data %>% group_by(id, treatment) %>%
-      filter(temperature==basetemp) %>%
-      summarise(abundance.score=mean(reading,na.rm=T),
+    data_abd <- data %>% dplyr::group_by(id, treatment) %>%
+      dplyr::filter(temperature==basetemp) %>%
+      dplyr::summarise(abundance.score=mean(reading,na.rm=T),
                 abundance.score.cv=sd(reading,na.rm=T)/exp(abs(abundance.score)))
     baseCVcutoff <- mean(data_abd$abundance.score.cv,na.rm=T)+
       cvcutoffthreshold*sd(data_abd$abundance.score.cv,na.rm=T)
-    data_thermal <- data %>% left_join(data_abd) %>% rowwise() %>%
-      mutate(stability=reading-abundance.score) %>% filter(temperature!=basetemp)
-    data_thermal1 <- data_thermal %>% group_by(id,treatment,temperature) %>%
-      summarise(stability.score=mean(stability,na.rm=T),
+    data_thermal <- data %>% dplyr::left_join(data_abd,by=c("id","treatment")) %>% dplyr::rowwise() %>%
+      dplyr::mutate(stability=reading-abundance.score) %>% dplyr::filter(temperature!=basetemp)
+    data_thermal1 <- data_thermal %>% dplyr::group_by(id,treatment,temperature) %>%
+      dplyr::summarise(stability.score=mean(stability,na.rm=T),
                 stability.score.cv=sd(stability,na.rm=T)/exp(abs(stability.score)))
-    data_thermal1t <- na.omit(data_thermal) %>% group_by(id,treatment,temperature) %>%
-      summarise(stability.score.t=t.test(stability)$statistic)
+    data_thermal1t <- na.omit(data_thermal) %>% dplyr::group_by(id,treatment,temperature) %>%
+      dplyr::summarise(stability.score.t=t.test(stability)$statistic)
     data_thermal1 <- merge(data_thermal1, data_thermal1t, all.x=T)
     if (weightbycv) {
-      data_thermal2 <- data_thermal1 %>% group_by(id,treatment) %>%
-        summarise(stability.score.mean=weighted.mean(stability.score,log(1/stability.score.cv),na.rm=T))
+      data_thermal2 <- data_thermal1 %>% dplyr::group_by(id,treatment) %>%
+        dplyr::summarise(stability.score.mean=weighted.mean(stability.score,log(1/stability.score.cv),na.rm=T))
       # 1/exp(stability.score.cv) could be another option
     } else {
-      data_thermal2 <- data_thermal1 %>% group_by(id,treatment) %>% arrange(temperature) %>%
-        summarise(stability.score.mean=mean(stability.score,na.rm=T))
+      data_thermal2 <- data_thermal1 %>% dplyr::group_by(id,treatment) %>% dplyr::arrange(temperature) %>%
+        dplyr::summarise(stability.score.mean=mean(stability.score,na.rm=T))
     }
-    data_thermal1.score <- mutate(data_thermal1, temperature=paste("stability.score",temperature,sep="."))
+    data_thermal1.score <- dplyr::mutate(data_thermal1, temperature=paste("stability.score",temperature,sep="."))
     data_thermal1.score <- tidyr::spread(data_thermal1.score[,-c(5:6)], temperature, stability.score)
     data_thermal1.t <- mutate(data_thermal1, temperature=paste0("stability.score.",temperature,".t"))
     data_thermal1.t <- tidyr::spread(data_thermal1.t[,-c(4,5)], temperature, stability.score.t)
-    data_thermal1.cv <- mutate(data_thermal1, temperature=paste0("stability.score.",temperature,".cv"))
+    data_thermal1.cv <- dplyr::mutate(data_thermal1, temperature=paste0("stability.score.",temperature,".cv"))
     data_thermal1.cv.cutoff <- mean(data_thermal1.cv$stability.score.cv,na.rm=T)+
       cvcutoffthreshold*sd(data_thermal1.cv$stability.score.cv,na.rm=T)
     data_thermal1.cv <- tidyr::spread(data_thermal1.cv[,-c(4,6)], temperature, stability.score.cv)
@@ -145,7 +145,7 @@ imprints_score <- function(data, format="9", basetemp="37C", basecvcheck=FALSE, 
   if (basecvcheck) {
     data_abd$baseoutlier <- data_abd$abundance.score.cv>baseCVcutoff
     questionid1 <- unique(subset(data_score, abundance.score.cv>baseCVcutoff)$id)
-    print(paste0("There are ", length(questionid1), " proteins with questionable baseline variance..."))
+    message(paste0("There are ", length(questionid1), " proteins with questionable baseline variance."))
     question1 <- subset(data_score_all, id%in%questionid1)
     question1 <- merge(question1, data_abd[ ,c("id","treatment","baseoutlier")])
     question1 <- merge(proteininfo, question1)
@@ -157,7 +157,7 @@ imprints_score <- function(data, format="9", basetemp="37C", basecvcheck=FALSE, 
   if (stabilitycvcheck) {
     data_thermal1.cv$numberofcvoutlier <- apply(data_thermal1.cv[,-c(1:2)], 1, function(x) sum(x>data_thermal1.cv.cutoff))
     questionid2 <- unique(subset(data_thermal1.cv, numberofcvoutlier>(ncol(data_thermal1.cv)-3)/2)$id)
-    print(paste0("There are ", length(questionid2), " proteins with questionable stability variance..."))
+    message(paste0("There are ", length(questionid2), " proteins with questionable stability variance."))
     question2 <- subset(data_score_all, id%in%questionid2)
     question2 <- merge(question2, data_thermal1.cv[ ,c("id","treatment","numberofcvoutlier")])
     question2 <- merge(proteininfo, question2)
@@ -228,22 +228,27 @@ imprints_score <- function(data, format="9", basetemp="37C", basecvcheck=FALSE, 
     if (length(cutoffvector)) {
       cat("Use the user specified cutoff...\n")
       abundancecutoff <- cutoffvector[1]
-      print(paste0("Abundance level change cutoff set at ", round(abundancecutoff,3)))
+      message(paste0("Abundance level change cutoff set at ", round(abundancecutoff,3)))
       stabilitycutoff <- cutoffvector[2]
-      print(paste0("Stability level change cutoff set at ", round(stabilitycutoff,3)))
+      message(paste0("Stability level change cutoff set at ", round(stabilitycutoff,3)))
     } else {
       abundancecutoff <- median(data_score_z$abundance.score,na.rm=T)+nMAD*mad(data_score_z$abundance.score,na.rm=T)
-      print(paste0("Abundance level change cutoff set at ", round(abundancecutoff,3)))
+      message(paste0("Abundance level change cutoff set at ", round(abundancecutoff,3)))
       stabilitycutoff <- median(data_score_z$stability.score.mean,na.rm=T)+nMAD*mad(data_score_z$stability.score.mean,na.rm=T)
-      print(paste0("Stability level change cutoff set at ", round(stabilitycutoff,3)))
+      message(paste0("Stability level change cutoff set at ", round(stabilitycutoff,3)))
     }
     if (as.character(format)=="9") {
-      data_score_z <- data_score_z %>% rowwise() %>% mutate(abundance.hit=ifelse(abs(abundance.score)>abundancecutoff,T,F))
-      data_score_z <- data_score_z %>% rowwise() %>% mutate(stability.hit=ifelse(abs(stability.score.mean)>stabilitycutoff,T,F))
-      data_score_z <- data_score_z %>% rowwise() %>% mutate(abundance.sign=ifelse(abundance.score>0,T,F))
-      data_score_z <- data_score_z %>% rowwise() %>% mutate(stability.sign=ifelse(stability.score.mean>0,T,F))
-      data_score_z <- data_score_z %>% mutate(category=paste0(as.character(abundance.hit),as.character(stability.hit),as.character(abundance.sign),
-                                                              as.character(stability.sign)))
+      data_score_z <- data_score_z %>% dplyr::rowwise() %>%
+        dplyr::mutate(abundance.hit=ifelse(abs(abundance.score)>abundancecutoff,T,F))
+      data_score_z <- data_score_z %>% dplyr::rowwise() %>%
+        dplyr::mutate(stability.hit=ifelse(abs(stability.score.mean)>stabilitycutoff,T,F))
+      data_score_z <- data_score_z %>% dplyr::rowwise() %>%
+        dplyr::mutate(abundance.sign=ifelse(abundance.score>0,T,F))
+      data_score_z <- data_score_z %>% dplyr::rowwise() %>%
+        dplyr::mutate(stability.sign=ifelse(stability.score.mean>0,T,F))
+      data_score_z <- data_score_z %>%
+        dplyr::mutate(category=paste0(as.character(abundance.hit),as.character(stability.hit),
+                                      as.character(abundance.sign),as.character(stability.sign)))
       data_score_z$category <- gsub("FALSE","N",data_score_z$category)
       data_score_z$category <- gsub("TRUE","C",data_score_z$category)
       data_score_z$category <- gsub("NN[CN]{2}","NN",data_score_z$category)
@@ -256,14 +261,17 @@ imprints_score <- function(data, format="9", basetemp="37C", basecvcheck=FALSE, 
       data_score_z$category <- gsub("CCNC","CC-+",data_score_z$category)
       data_score_z$category <- gsub("CCNN","CC--",data_score_z$category)
     } else if (as.character(format)=="4") {
-      data_score_z <- data_score_z %>% rowwise() %>% mutate(abundance.hit=ifelse(abs(abundance.score)>abundancecutoff,T,F))
-      data_score_z <- data_score_z %>% rowwise() %>% mutate(stability.hit=ifelse(abs(stability.score.mean)>stabilitycutoff,T,F))
-      data_score_z <- data_score_z %>% mutate(category=paste0(as.character(abundance.hit),as.character(stability.hit)))
+      data_score_z <- data_score_z %>% dplyr::rowwise() %>%
+        dplyr::mutate(abundance.hit=ifelse(abs(abundance.score)>abundancecutoff,T,F))
+      data_score_z <- data_score_z %>% dplyr::rowwise() %>%
+        dplyr::mutate(stability.hit=ifelse(abs(stability.score.mean)>stabilitycutoff,T,F))
+      data_score_z <- data_score_z %>%
+        dplyr::mutate(category=paste0(as.character(abundance.hit),as.character(stability.hit)))
       data_score_z$category <- gsub("FALSE","N",data_score_z$category)
       data_score_z$category <- gsub("TRUE","C",data_score_z$category)
     }
     data_score <- merge(proteininfo, data_score_z)
-    print("The number of proteins in each category is as follows:")
+    message("The number of proteins in each category is as follows:")
     if (length(grep("set",names(data_score)))) {
       print(table(data_score$category, data_score$treatment, data_score$set, useNA="ifany"))
     } else {
@@ -313,15 +321,20 @@ imprints_score <- function(data, format="9", basetemp="37C", basecvcheck=FALSE, 
     }
     q <- q + theme(text = element_text(size=12), plot.title = element_text(hjust=0.5, size=rel(1.2)), aspect.ratio=1)
     # q <- q + coord_cartesian(xlim=xrange, ylim=yrange)
-    ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M_"),dataname,"_Abundance_Stability_score_MAD.pdf"), q, width=11.69, height=8.27)
+    ggplot2::ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M_"),dataname,"_Abundance_Stability_score_MAD.pdf"), q, width=11.69, height=8.27)
   } else {
     if (as.character(format)=="9") {
-      data_score_z <- data_score_z %>% rowwise() %>% mutate(abundance.hit=ifelse(abundance.score.fdr<fdrthreshold,T,F))
-      data_score_z <- data_score_z %>% rowwise() %>% mutate(stability.hit=ifelse(stability.score.mean.fdr<fdrthreshold,T,F))
-      data_score_z <- data_score_z %>% rowwise() %>% mutate(abundance.sign=ifelse(abundance.score>0,T,F))
-      data_score_z <- data_score_z %>% rowwise() %>% mutate(stability.sign=ifelse(stability.score.mean>0,T,F))
-      data_score_z <- data_score_z %>% mutate(category=paste0(as.character(abundance.hit),as.character(stability.hit),as.character(abundance.sign),
-                                                              as.character(stability.sign)))
+      data_score_z <- data_score_z %>% dplyr::rowwise() %>%
+        dplyr::mutate(abundance.hit=ifelse(abundance.score.fdr<fdrthreshold,T,F))
+      data_score_z <- data_score_z %>% dplyr::rowwise() %>%
+        dplyr::mutate(stability.hit=ifelse(stability.score.mean.fdr<fdrthreshold,T,F))
+      data_score_z <- data_score_z %>% dplyr::rowwise() %>%
+        dplyr::mutate(abundance.sign=ifelse(abundance.score>0,T,F))
+      data_score_z <- data_score_z %>% dplyr::rowwise() %>%
+        dplyr::mutate(stability.sign=ifelse(stability.score.mean>0,T,F))
+      data_score_z <- data_score_z %>%
+        dplyr::mutate(category=paste0(as.character(abundance.hit),as.character(stability.hit),
+                                      as.character(abundance.sign),as.character(stability.sign)))
       data_score_z$category <- gsub("FALSE","N",data_score_z$category)
       data_score_z$category <- gsub("TRUE","C",data_score_z$category)
       data_score_z$category <- gsub("NN[CN]{2}","NN",data_score_z$category)
@@ -341,13 +354,14 @@ imprints_score <- function(data, format="9", basetemp="37C", basecvcheck=FALSE, 
       data_score_z$category <- gsub("TRUE","C",data_score_z$category)
     }
     data_score <- merge(proteininfo, data_score_z)
-    print("The number of proteins in each category is as follows:")
+    message("The number of proteins in each category is as follows:")
     if (length(grep("set",names(data_score)))) {
       print(table(data_score$category, data_score$treatment, data_score$set))
     } else {
       print(table(data_score$category, data_score$treatment))
     }
-    data_score <- data_score %>% rowwise() %>% mutate(gene=getGeneName(description, pfdatabase)) %>% ungroup()
+    data_score <- data_score %>% dplyr::rowwise() %>%
+      dplyr::mutate(gene=getGeneName(description, pfdatabase)) %>% dplyr::ungroup()
 
     ms_filewrite(data_score, paste0(dataname, "_Abundance_Stability_score_z.txt"), outdir=outdir)
     data_score_sim <- data_score[ ,c("id","description","treatment","abundance.score","stability.score.mean","category")]
@@ -387,7 +401,7 @@ imprints_score <- function(data, format="9", basetemp="37C", basecvcheck=FALSE, 
       }
     }
     q <- q + theme(text = element_text(size=12), plot.title = element_text(hjust=0.5, size=rel(1.2)), aspect.ratio=1)
-    ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M_"),dataname, "_Abundance_Stability_score.pdf"), q, width=11.69, height=8.27)
+    ggplot2::ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M_"),dataname, "_Abundance_Stability_score.pdf"), q, width=11.69, height=8.27)
 
     # next to generate the scoring plot on the z-score values
     xlimit <- c(-max(abs(data_score$abundance.score.z),na.rm=T)-0.5, max(abs(data_score$abundance.score.z),na.rm=T)+0.5)
@@ -419,7 +433,7 @@ imprints_score <- function(data, format="9", basetemp="37C", basecvcheck=FALSE, 
       }
     }
     q <- q + theme(text = element_text(size=12), plot.title = element_text(hjust=0.5, size=rel(1.2)), aspect.ratio=1)
-    ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M_"),dataname,"_Abundance_Stability_score_z.pdf"), q, width=11.69, height=8.27)
+    ggplot2::ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M_"),dataname,"_Abundance_Stability_score_z.pdf"), q, width=11.69, height=8.27)
   }
 
   if (length(attr(data_score,"outdir"))==0 & length(outdir)>0) {

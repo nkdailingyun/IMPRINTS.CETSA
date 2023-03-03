@@ -4,7 +4,7 @@
 #'
 #' @param data dataset after calculating the relative protein abundance differences
 #' i.e., imprints_caldiff()
-#'@param format choose between 9 and 4, indicating how many categories to segregate,
+#' @param format choose between 9 and 4, indicating how many categories to segregate,
 #' default value is 9, in which proteins are divided into 9 categories: NN, CN+, CN-,
 #' NC+, NC-, CC++, CC+-, CC-+, CC--. When switch to 4, proteins are instead divided into
 #' 4 categories: NN, CN, NC, CC. The sign of + or - after N or C is determined by the
@@ -15,7 +15,7 @@
 #' @param qualitycutoff The threshold value for the SEM to separate well-measured and ill-measured measurements
 #' @param meandev The deviation of individual mean from the group mean in CN categorization
 #'
-#' @import dplyr stringr
+#' @import stringr
 #' @export
 #' @return a list
 #' @examples \dontrun{
@@ -41,136 +41,141 @@ imprints_score_boundness <- function(data, format="9", basetemp="37C", meancutof
     data$description <- NULL
   }
   if (length(grep("countNum", names(data)))) {
-    countinfo <- unique(data[ ,c("id","sumUniPeps","sumPSMs","countNum")])
-    data <- data[ ,!(names(data) %in% c("sumUniPeps","sumPSMs","countNum"))]
+    countinfo <- unique(data[ ,stringr::str_which(names(data), "^id$|^sumPSM|^countNum|^sumUniPeps")])
+    data <- data[ ,-stringr::str_which(names(data), "^sumPSM|^countNum|^sumUniPeps")]
   }
 
   refcol <- which(apply(data[,-1],2,sum,na.rm=T)==0)
-  data <- gather(data[ ,-(refcol+1)], condition, reading, -id)
+  data <- tidyr::gather(data[ ,-(refcol+1)], condition, reading, -id)
   # data <- gather(data, condition, reading, -id)
   if (length(unlist(strsplit(data$condition[1], "_")))==4) {
     data <- tidyr::separate(data, condition, into=c("set","temperature","replicate","treatment"), sep="_")
-    data_clean <- data %>% group_by(id,set,temperature,treatment) %>%
-      summarise(Mean = mean(reading,na.rm=T),
-                SD = sd(reading,na.rm=T),
-                SEM = SD/sqrt(length(na.omit(reading))))
+    data_clean <- data %>%
+      dplyr::group_by(id,set,temperature,treatment) %>%
+      dplyr::summarise(Mean = mean(reading,na.rm=T),
+                      SD = sd(reading,na.rm=T),
+                      SEM = SD/sqrt(length(na.omit(reading))))
 
-    data_abd <- data %>% group_by(id, set, treatment) %>%
-      filter(temperature==basetemp) %>%
-      summarise(abundance.score=mean(reading,na.rm=T))
-    data_thermal <- data %>% left_join(data_abd) %>% rowwise() %>%
-      mutate(stability=reading-abundance.score) %>% filter(temperature!=basetemp)
-    data_thermal1 <- data_thermal %>% group_by(id,set,treatment,temperature) %>%
-      summarise(stability.score=mean(stability,na.rm=T))
-    data_thermal2 <- data_thermal1 %>% group_by(id,set,treatment) %>%
-      summarise(stability.score.mean=mean(stability.score,na.rm=T))
+    data_abd <- data %>% dplyr::group_by(id, set, treatment) %>%
+      dplyr::filter(temperature==basetemp) %>%
+      dplyr::summarise(abundance.score=mean(reading,na.rm=T))
+    data_thermal <- data %>% dplyr::left_join(data_abd) %>% dplyr::rowwise() %>%
+      dplyr::mutate(stability=reading-abundance.score) %>% dplyr::filter(temperature!=basetemp)
+    data_thermal1 <- data_thermal %>% dplyr::group_by(id,set,treatment,temperature) %>%
+      dplyr::summarise(stability.score=mean(stability,na.rm=T))
+    data_thermal2 <- data_thermal1 %>% dplyr::group_by(id,set,treatment) %>%
+      dplyr::summarise(stability.score.mean=mean(stability.score,na.rm=T))
   } else if (length(unlist(strsplit(data$condition[1], "_")))==3) {
     data <- tidyr::separate(data, condition, into=c("temperature","replicate","treatment"), sep="_")
     data_clean <- data %>%
-      group_by(id,temperature,treatment) %>%
-      summarise(Mean = mean(reading,na.rm=T),
-                SD = sd(reading,na.rm=T),
-                SEM = SD/sqrt(length(na.omit(reading))))
+      dplyr::group_by(id,temperature,treatment) %>%
+      dplyr::summarise(Mean = mean(reading,na.rm=T),
+                      SD = sd(reading,na.rm=T),
+                      SEM = SD/sqrt(length(na.omit(reading))))
 
-    data_abd <- data %>% group_by(id, treatment) %>%
-      filter(temperature==basetemp) %>%
-      summarise(abundance.score=mean(reading,na.rm=T))
-    data_thermal <- data %>% left_join(data_abd) %>% rowwise() %>%
-      mutate(stability=reading-abundance.score) %>% filter(temperature!=basetemp)
-    data_thermal1 <- data_thermal %>% group_by(id,treatment,temperature) %>%
-      summarise(stability.score=mean(stability,na.rm=T))
-    data_thermal2 <- data_thermal1 %>% group_by(id,treatment) %>%
-      summarise(stability.score.mean=mean(stability.score,na.rm=T))
+    data_abd <- data %>% dplyr::group_by(id, treatment) %>%
+      dplyr::filter(temperature==basetemp) %>%
+      dplyr::summarise(abundance.score=mean(reading,na.rm=T))
+    data_thermal <- data %>% dplyr::left_join(data_abd) %>% dplyr::rowwise() %>%
+      dplyr::mutate(stability=reading-abundance.score) %>% dplyr::filter(temperature!=basetemp)
+    data_thermal1 <- data_thermal %>% dplyr::group_by(id,treatment,temperature) %>%
+      dplyr::summarise(stability.score=mean(stability,na.rm=T))
+    data_thermal2 <- data_thermal1 %>% dplyr::group_by(id,treatment) %>%
+      dplyr::summarise(stability.score.mean=mean(stability.score,na.rm=T))
   } else {
     stop("make sure the namings of the columns of the dasaset are correct.")
   }
 
   data_thermal3 <- merge(data_abd, data_thermal2)
-  data_thermal3 <- data_thermal3 %>% rowwise() %>% mutate(abundance.sign=ifelse(abundance.score>0,T,F))
-  data_thermal3 <- data_thermal3 %>% rowwise() %>% mutate(stability.sign=ifelse(stability.score.mean>0,T,F))
-  data_thermal3 <- data_thermal3 %>% mutate(category=paste0(as.character(abundance.sign),as.character(stability.sign)))
+  data_thermal3 <- data_thermal3 %>% dplyr::rowwise() %>%
+    dplyr::mutate(abundance.sign=ifelse(abundance.score>0,T,F))
+  data_thermal3 <- data_thermal3 %>% dplyr::rowwise() %>%
+    dplyr::mutate(stability.sign=ifelse(stability.score.mean>0,T,F))
+  data_thermal3 <- data_thermal3 %>%
+    dplyr::mutate(category=paste0(as.character(abundance.sign),as.character(stability.sign)))
   data_thermal3$category <- gsub("FALSE","N",data_thermal3$category)
   data_thermal3$category <- gsub("TRUE","C",data_thermal3$category)
   data_thermal3 <- data_thermal3[ ,c("id","treatment","category")] %>% ungroup()
 
   selection_metrics <- data_clean %>%
-    group_by(mean_threshold = (abs(Mean) > meancutoff),
-             bounded = (abs(Mean)- boundedness*SEM>0),
-             wellmeasured = (SEM < qualitycutoff))
+    dplyr::group_by(mean_threshold = (abs(Mean) > meancutoff),
+                    bounded = (abs(Mean)- boundedness*SEM>0),
+                    wellmeasured = (SEM < qualitycutoff))
 
   ## Initial hitlist (Reference)
   # Definition for hit
   hits_definition <- selection_metrics %>%
-    filter(mean_threshold == T, bounded == T)
+    dplyr::filter(mean_threshold == T, bounded == T)
 
   #Unique id, treatment pair for hits
   if (length(grep("set",names(data_thermal2)))==0) {
     ##### need to implement the one with set possibility in future ######
-    hits_keys <- hits_definition %>% ungroup() %>% select(id,treatment) %>% distinct()
+    hits_keys <- hits_definition %>% dplyr::ungroup() %>%
+      dplyr::select(id,treatment) %>% dplyr::distinct()
 
     # Reference hitlist
-    hitlist <- selection_metrics %>% right_join(hits_keys, by=names(hits_keys))
+    hitlist <- selection_metrics %>% dplyr::right_join(hits_keys, by=names(hits_keys))
     referencelist <- hitlist
 
     # Separate hits and NN from data
-    NN <- selection_metrics %>% anti_join(hitlist) %>% group_by(category = 'NN')
+    NN <- selection_metrics %>% dplyr::anti_join(hitlist) %>% dplyr::group_by(category = 'NN')
 
     ## Extract Not determinable -  ND
     # Proteins with noisy at baseline temperature
-    ND_keys <- hitlist %>% filter(temperature == basetemp,
-                                  bounded == FALSE,
-                                  wellmeasured == FALSE) %>%
-                ungroup() %>% select(id,treatment) %>% distinct()
-    ND <- hitlist %>% right_join(ND_keys, by=names(ND_keys))
+    ND_keys <- hitlist %>% dplyr::filter(temperature == basetemp,
+                                         bounded == FALSE,
+                                         wellmeasured == FALSE) %>%
+               dplyr::ungroup() %>% dplyr::select(id,treatment) %>% dplyr::distinct()
+    ND <- hitlist %>% dplyr::right_join(ND_keys, by=names(ND_keys))
 
     # Proteins without measurement at baseline temperature, combined into ND
-    NDwo37 <- hitlist %>% filter(temperature == basetemp,
-                                 is.na(Mean) == TRUE)
-    ND <- ND %>% full_join(NDwo37, by=names(ND)) %>% group_by(category = 'ND')
-    ND <- inner_join(ND, data_thermal3, by=c("id","treatment")) %>%
-          mutate(category=paste0(category.x,category.y)) %>%
-          select(-c(category.x,category.y))
+    NDwo37 <- hitlist %>% dplyr::filter(temperature == basetemp,
+                                        is.na(Mean) == TRUE)
+    ND <- ND %>% dplyr::full_join(NDwo37, by=names(ND)) %>% dplyr::group_by(category = 'ND')
+    ND <- dplyr::inner_join(ND, data_thermal3, by=c("id","treatment")) %>%
+          dplyr::mutate(category=paste0(category.x,category.y)) %>%
+          dplyr::select(-c(category.x,category.y))
 
     # Remove ND from hitlist
-    hitlist <- hitlist %>% anti_join(ND, by=c('id','treatment'))
+    hitlist <- hitlist %>% dplyr::anti_join(ND, by=c('id','treatment'))
 
     ## Stability change w/out expression change  - NC
     # High Temp. hits
-    NC_highT <- hitlist %>% filter(temperature != basetemp,
-                                mean_threshold == TRUE,
-                                bounded == TRUE) %>%
-                ungroup() %>% select(id, treatment) %>% distinct()
+    NC_highT <- hitlist %>% dplyr::filter(temperature != basetemp,
+                                          mean_threshold == TRUE,
+                                          bounded == TRUE) %>%
+      dplyr::ungroup() %>% dplyr::select(id, treatment) %>% dplyr::distinct()
 
     # Low Temp., small mean and well measured
-    NC_lowT <- hitlist %>% filter(temperature == basetemp,
-                               mean_threshold == FALSE,
-                               wellmeasured == TRUE) %>%
-              ungroup() %>% select(id,treatment) %>% distinct()
+    NC_lowT <- hitlist %>% dplyr::filter(temperature == basetemp,
+                                         mean_threshold == FALSE,
+                                         wellmeasured == TRUE) %>%
+      dplyr::ungroup() %>% dplyr::select(id,treatment) %>% distinct()
 
     # Match id,condition pair fulfilling NC condition
-    NC_keys <- inner_join(NC_highT, NC_lowT)
-    NC <- hitlist %>% right_join(NC_keys, names(NC_keys)) %>% group_by(category='NC')
-    NC <- NC %>% inner_join(data_thermal3, by=c("id","treatment")) %>%
-          mutate(category=paste0(category.x,category.y)) %>%
-          select(-c(category.x,category.y))
+    NC_keys <- dplyr::inner_join(NC_highT, NC_lowT)
+    NC <- hitlist %>% dplyr::right_join(NC_keys, names(NC_keys)) %>% dplyr::group_by(category='NC')
+    NC <- NC %>% dplyr::inner_join(data_thermal3, by=c("id","treatment")) %>%
+      dplyr::mutate(category=paste0(category.x,category.y)) %>%
+      dplyr::select(-c(category.x,category.y))
 
     # Remove NC from hitlist
-    hitlist <- hitlist %>% anti_join(NC, by=c('id','treatment'))
+    hitlist <- hitlist %>% dplyr::anti_join(NC, by=c('id','treatment'))
   }
 
   ## Expression change w/out stability change - CN
 
   ################################## INTERVAL CONDITION FOR CN ##################################
-  CN_intervals <- hitlist %>% group_by(upperbound=Mean+SEM, lowerbound=Mean-SEM)
-  CN_keys <- CN_intervals %>% ungroup() %>% select(id, treatment) %>% distinct()
+  CN_intervals <- hitlist %>% dplyr::group_by(upperbound=Mean+SEM, lowerbound=Mean-SEM)
+  CN_keys <- CN_intervals %>% dplyr::ungroup() %>% dplyr::select(id, treatment) %>% dplyr::distinct()
 
   CN_keep_interval <- c()
   CN_discard_interval <- c() # Will be part of CC
 
   for (idx in 1:nrow(CN_keys)) {
     iterTibble <- CN_intervals %>%
-      filter(id == CN_keys$id[idx], treatment == CN_keys$treatment[idx]) %>%
-      select(temperature,upperbound,lowerbound)
+      dplyr::filter(id == CN_keys$id[idx], treatment == CN_keys$treatment[idx]) %>%
+      dplyr::select(temperature,upperbound,lowerbound)
     overlap <- c()
     # print(iterTibble)
     for (i in 1:nrow(iterTibble)) {
@@ -189,21 +194,21 @@ imprints_score_boundness <- function(data, format="9", basetemp="37C", meancutof
   ############################## DEVIATION FROM REFERENCE MEAN CONDITION #############################
   # baseline temperature measurement with high mean
   CN_referencekeys <- hitlist %>%
-    filter(temperature == basetemp, mean_threshold == TRUE) %>%
-    ungroup () %>% select(id,treatment) %>% distinct()
+    dplyr::filter(temperature == basetemp, mean_threshold == TRUE) %>%
+    dplyr::ungroup () %>% dplyr::select(id,treatment) %>% dplyr::distinct()
 
   CN_keep_meandev <- c()
   CN_discard_meandev <- c() # Will be part of CC
 
   for (idx in 1:nrow(CN_referencekeys)) {
-    iterTibble <- hitlist %>% filter(id == CN_referencekeys$id[idx],
+    iterTibble <- hitlist %>% dplyr::filter(id == CN_referencekeys$id[idx],
                                      treatment == CN_referencekeys$treatment[idx])
-    if (nrow(iterTibble %>% filter(temperature != basetemp, bounded == TRUE)) == 0) {
+    if (nrow(iterTibble %>% dplyr::filter(temperature != basetemp, bounded == TRUE)) == 0) {
       next # Not bounded high temps are disregarded
     } else {
-      refmean <- (iterTibble %>% filter(temperature == basetemp))$Mean
-      boundediterTibble <- iterTibble %>% filter(temperature != basetemp, bounded == TRUE)
-      deviateTibble <- iterTibble %>% filter(temperature != basetemp, wellmeasured == TRUE)
+      refmean <- (iterTibble %>% dplyr::filter(temperature == basetemp))$Mean
+      boundediterTibble <- iterTibble %>% dplyr::filter(temperature != basetemp, bounded == TRUE)
+      deviateTibble <- iterTibble %>% dplyr::filter(temperature != basetemp, wellmeasured == TRUE)
       # Bounded high temp. deviate at most meandev AND
       # wellmeasured high temp don't deviate more than meandev
       if ( (sum((abs(boundediterTibble$Mean - refmean) < meandev*abs(refmean))) == nrow(boundediterTibble)) &&
@@ -217,17 +222,17 @@ imprints_score_boundness <- function(data, format="9", basetemp="37C", meancutof
   ######################################################################################################
 
   # Proteins that do not fulfill either of CN conditions are CC - Expression and stability change
-  CC_keys <- inner_join(CN_discard_interval, CN_discard_meandev)
-  CC <- hitlist %>% right_join(CC_keys,by=names(CC_keys)) %>% group_by(category = 'CC')
-  CC <- CC %>% inner_join(data_thermal3, by=c("id","treatment")) %>%
-        mutate(category=paste0(category.x,category.y)) %>%
-        select(-c(category.x,category.y))
+  CC_keys <- dplyr::inner_join(CN_discard_interval, CN_discard_meandev)
+  CC <- hitlist %>% dplyr::right_join(CC_keys,by=names(CC_keys)) %>% dplyr::group_by(category = 'CC')
+  CC <- CC %>% dplyr::inner_join(data_thermal3, by=c("id","treatment")) %>%
+    dplyr::mutate(category=paste0(category.x,category.y)) %>%
+    dplyr::select(-c(category.x,category.y))
 
   # Remove all CC and reveal CNs
-  CN <- hitlist %>% anti_join(CC, by=c('id','treatment')) %>% group_by(category = 'CN')
-  CN <- CN %>% inner_join(data_thermal3, by=c("id","treatment")) %>%
-        mutate(category=paste0(category.x,category.y)) %>%
-        select(-c(category.x,category.y))
+  CN <- hitlist %>% dplyr::anti_join(CC, by=c('id','treatment')) %>% dplyr::group_by(category = 'CN')
+  CN <- CN %>% dplyr::inner_join(data_thermal3, by=c("id","treatment")) %>%
+    dplyr::mutate(category=paste0(category.x,category.y)) %>%
+    dplyr::select(-c(category.x,category.y))
 
   ##################################################
   #                                                #
@@ -237,9 +242,9 @@ imprints_score_boundness <- function(data, format="9", basetemp="37C", meancutof
 
   # Complete set of all categorized proteins
   categorized_full <- CC %>%
-    full_join(CN, by = colnames(CN)) %>%
-    full_join(NC, by = colnames(NC)) %>%
-    full_join(ND, by = colnames(ND)) %>% distinct()
+    dplyr::full_join(CN, by = colnames(CN)) %>%
+    dplyr::full_join(NC, by = colnames(NC)) %>%
+    dplyr::full_join(ND, by = colnames(ND)) %>% distinct()
 
   if (as.character(format)=="9") {
     categorized_full$category <- gsub("ND[CN]{2}","ND",categorized_full$category)
@@ -252,7 +257,8 @@ imprints_score_boundness <- function(data, format="9", basetemp="37C", meancutof
     categorized_full$category <- gsub("CCCN","CC+-",categorized_full$category)
     categorized_full$category <- gsub("CCNC","CC-+",categorized_full$category)
     categorized_full$category <- gsub("CCNN","CC--",categorized_full$category)
-  } else if (as.character(format)=="4") {
+  }
+  else if (as.character(format)=="4") {
     categorized_full$category <- gsub("ND[CN]{2}","ND",categorized_full$category)
     categorized_full$category <- gsub("NN[CN]{2}","NN",categorized_full$category)
     categorized_full$category <- gsub("CN[CN]{2}","CN",categorized_full$category)
@@ -260,11 +266,11 @@ imprints_score_boundness <- function(data, format="9", basetemp="37C", meancutof
     categorized_full$category <- gsub("CC[CN]{2}","CC",categorized_full$category)
   }
 
-  out_reference <- inner_join(proteininfo, referencelist, by = 'id')
-  out_categorized <- inner_join(proteininfo, categorized_full, by = 'id')
-  out_summary <- categorized_full %>% group_by(id, treatment, category) %>% summarise()
-  out_summary <- inner_join(proteininfo, out_summary, by = 'id')
-  out_NN <- inner_join(proteininfo, NN, by = 'id')
+  out_reference <- dplyr::inner_join(proteininfo, referencelist, by = 'id')
+  out_categorized <- dplyr::inner_join(proteininfo, categorized_full, by = 'id')
+  out_summary <- categorized_full %>% dplyr::group_by(id, treatment, category) %>% dplyr::summarise()
+  out_summary <- dplyr::inner_join(proteininfo, out_summary, by = 'id')
+  out_NN <- dplyr::inner_join(proteininfo, NN, by = 'id')
 
   ms_filewrite(out_reference, paste0(dataname, "_boundness_Hitlist.txt"), outdir=outdir)
   ms_filewrite(out_categorized, paste0(dataname, "_boundness_Categorized.txt"), outdir=outdir)
@@ -278,17 +284,17 @@ imprints_score_boundness <- function(data, format="9", basetemp="37C", meancutof
   ##################################################
 
   ### Return : Summary of run and data frame with categories for further handling. ###
-  summary_NN <- NN %>% group_by(id,treatment,category) %>% summarise()
+  summary_NN <- NN %>% dplyr::group_by(id,treatment,category) %>% dplyr::summarise()
   tablecate <- table(out_summary[ ,c(3:4)])
   tableNN <- table(summary_NN[ ,c(2:3)])
-  print('This dataset has the following count for the categories:')
-  print(cbind(tablecate,tableNN))
+  message('This dataset has the following count for the categories:')
+  message(cbind(tablecate,tableNN))
 
-  print('The categories were obtained with the following values for the parameters:')
-  print(sprintf(fmt = 'meancutoff: %s', meancutoff))
-  print(sprintf(fmt = 'boundedness: %s', boundedness))
-  print(sprintf(fmt = 'qualitycutoff: %s', qualitycutoff))
-  print(sprintf(fmt = 'meandev: %s', meandev))
+  message('The categories were obtained with the following values for the parameters:')
+  message(sprintf(fmt = 'meancutoff: %s', meancutoff))
+  message(sprintf(fmt = 'boundedness: %s', boundedness))
+  message(sprintf(fmt = 'qualitycutoff: %s', qualitycutoff))
+  message(sprintf(fmt = 'meandev: %s', meandev))
 
   results <- rbind(out_categorized, out_NN)
   results.list <- split(results, f = results$category)

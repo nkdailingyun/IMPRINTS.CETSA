@@ -1,50 +1,48 @@
 Package: IMPRINTS.CETSA
-Title: Processing and Visualization of Proteome-wide IMPRINTS-CETSA data
-Version: 0.0.0.9000
+Title: Process and Visualize Proteome-wide IMPRINTS-CETSA data
+Version: 1.0.0
 Authors@R: 
-    person("Lingyun", "Dai", , "nkdailingyun@gmail.com", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0001-9386-5967"))
-Description: This package is designed to process IMRPINTS-CETSA result
-    from TMT labelling and quantification scheme.
+    c(person("Lingyun", "Dai", email = "nkdailingyun@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-9386-5967")),
+    person("Marc-Antoine", "Gerault", email = "marco.gerault@gmail.com", role = c("ctb")))
+Description: This package is designed to process and visualize IMRPINTS-CETSA 
+    results from TMT labelling and quantification scheme.
 License: MIT + file LICENSE
 Depends: 
-    dplyr (>= 1.0.0),
-    ggplot2 (>= 3.2.0),
-    R (>= 4.0.0),
-    readr (>= 2.0.0),
-    reshape2 (>= 1.4.0)
+    R (>= 4.0.0)
 Imports: 
-    arrayQualityMetrics,
-    Biobase,
+    dplyr (>= 1.0.0),
     drc (>= 3.0),
     fdrtool,
     GGally,
+    ggplot2 (>= 3.2.0),
     ggpubr,
     ggrepel (>= 0.8.0),
-    graphics,
-    grDevices,
-    grid,
     gridExtra,
     gridSVG,
     gtools,
-    limma,
     MESS,
-    methods,
     mice,
     Nozzle.R1,
     plyr (>= 1.8.0),
+    readr (>= 2.0.0),
+    reshape2 (>= 1.4.0),
     RColorBrewer,
     scales,
     stats,
     tibble (>= 3.0.0),
     tidyr (>= 1.2.0),
-    utils,
     VennDiagram,
     VIM,
     XML
 Suggests: 
+    arrayQualityMetrics,
+    cowplot,
+    Biobase,
     knitr,
-    rmarkdown
+    limma,
+    rmarkdown,
+    roxygen2
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.1

@@ -12,9 +12,9 @@
 #' }
 
 ms_composite_ID_Gene <- function(data, pfdatabase=FALSE) {
-  data <- data %>% rowwise() %>%
-    mutate(description = getGeneName(description, pfdatabase)) %>%
-    mutate(id = paste(id, description, sep="\n"))
+  data <- data %>% dplyr::rowwise() %>%
+    dplyr::mutate(description = getGeneName(description, pfdatabase)) %>%
+    dplyr::mutate(id = paste(id, description, sep="\n"))
   data$description<-NULL
   return(data)
 }
@@ -33,9 +33,9 @@ ms_composite_ID_Gene <- function(data, pfdatabase=FALSE) {
 #' }
 
 ms_composite_ID_Protein <- function(data, pfdatabase=FALSE) {
-  data <- data %>% rowwise() %>%
-    mutate(description = getProteinName(description, pfdatabase)) %>%
-    mutate(id = paste(id, description, sep="\n"))
+  data <- data %>% dplyr::rowwise() %>%
+    dplyr::mutate(description = getProteinName(description, pfdatabase)) %>%
+    dplyr::mutate(id = paste(id, description, sep="\n"))
   data$description<-NULL
   return(data)
 }
@@ -55,9 +55,10 @@ ms_composite_ID_Protein <- function(data, pfdatabase=FALSE) {
 #'
 
 ms_composite_ID_Gene_Protein <- function(data, pfdatabase=FALSE) {
-  data <- data %>% rowwise() %>% mutate(description1 = getProteinName(description, pfdatabase)) %>%
-    mutate(description2 = getGeneName(description, pfdatabase)) %>%
-    mutate(id = paste(id, description1, description2, sep="\n"))
+  data <- data %>% dplyr::rowwise() %>%
+    dplyr::mutate(description1 = getProteinName(description, pfdatabase)) %>%
+    dplyr::mutate(description2 = getGeneName(description, pfdatabase)) %>%
+    dplyr::mutate(id = paste(id, description1, description2, sep="\n"))
   data$description1<-NULL
   data$description2<-NULL
   data$description<-NULL
@@ -78,7 +79,7 @@ ms_composite_ID_Gene_Protein <- function(data, pfdatabase=FALSE) {
 #' }
 #'
 ms_getGene <- function(data, pfdatabase=FALSE) {
-  data <- data %>% rowwise() %>%
-    mutate(gene = getGeneName(description, pfdatabase))
+  data <- data %>% dplyr::rowwise() %>%
+    dplyr::mutate(gene = getGeneName(description, pfdatabase))
   return(data)
 }

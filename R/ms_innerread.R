@@ -56,12 +56,12 @@ ms_innerread <- function(file, fchoose, treatment, nread, abdread,
       names(data)[pattern] <- "FDR"
       pattern <- grep("Low", data$FDR)
       if (length(pattern) > 0) {
-        cat(paste0("There are ",length(pattern)," low confidence proteins in the origial data. "))
-        cat("These low confidence proteins were removed from downstream analysis!\n")
+        message(paste0("There are ",length(pattern)," low confidence proteins in the origial data."))
+        message("These low confidence proteins were removed from downstream analysis!")
         data_lc <- data[pattern, ]
         data <- data[-pattern, ]
       } else {
-        cat("No low confidence proteins found in the origial data.\n")
+        message("No low confidence proteins found in the origial data.")
       }
     }
   }
@@ -172,14 +172,14 @@ ms_innerread <- function(file, fchoose, treatment, nread, abdread,
       data <- data[ ,c(1:(nread+5),tmppos)]
     }
   } else {
-    cat("There is no protein abundance count information in the original data.\n")
+    message("There is no protein abundance count information in the original data.")
     collength <- length(names(data))
     if (PDversion>=21 & abdread) {
       data <- data[ ,c(1:(2*nread+5))]
     } else {
       data <- data[ ,c(1:(nread+5))]
     }
-    cat("Set a default number for the protein abundance count to 2.\n")
+    message("Set a default number for the protein abundance count to 2.")
     data$countNum <- 2
   }
 

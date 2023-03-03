@@ -13,9 +13,8 @@
 #' @param labelgeneid a vector of the gene symbol id to show on the plot
 
 #'
-#' @import dplyr Biobase
-#' @import limma
-#' @import ggplot2
+#' @importFrom limma contrasts.fit eBayes lmFit makeContrasts topTable
+#' @importFrom ggplot2 ggsave
 #' @import ggrepel
 #' @export
 #' @return a dataframe
@@ -37,8 +36,8 @@ imprints_score_abundance <- function(data, set=NULL, contrast=NULL, basetemp="37
     proteininfo <- unique(data[ ,c("id","description")])
   }
   if (length(grep("countNum", names(data)))) {
-    countinfo <- unique(data[ ,c("id","sumUniPeps","sumPSMs","countNum")])
-    data <- data[ ,!(names(data) %in% c("sumUniPeps","sumPSMs","countNum"))]
+    countinfo <- unique(data[ ,stringr::str_which(names(data), "^id$|^sumPSM|^countNum|^sumUniPeps")])
+    data <- data[ ,-stringr::str_which(names(data), "^sumPSM|^countNum|^sumUniPeps")]
   }
 
   if (length(set)>0) {
@@ -67,7 +66,7 @@ imprints_score_abundance <- function(data, set=NULL, contrast=NULL, basetemp="37
       replicate <- unlist(lapply(strsplit(cname, "_"),`[`,2))
       treatment <- unlist(lapply(strsplit(cname, "_"),`[`,3))
       pdata1 <- data.frame(temperature=temperature, replicate=replicate, treatment=treatment)
-      pdata1 <- mutate(pdata1, trte=paste(treatment,temperature,sep="."))
+      pdata1 <- dplyr::mutate(pdata1, trte=paste(treatment,temperature,sep="."))
       row.names(pdata1) <- cname
       nread <- nrow(pdata1)
       #print(pdata1)
@@ -81,7 +80,7 @@ imprints_score_abundance <- function(data, set=NULL, contrast=NULL, basetemp="37
       replicate <- unlist(lapply(strsplit(cname, "_"),`[`,3))
       treatment <- unlist(lapply(strsplit(cname, "_"),`[`,4))
       pdata1 <- data.frame(set=set, temperature=temperature, replicate=replicate, treatment=treatment)
-      pdata1 <- mutate(pdata1, trte=paste(treatment,temperature,sep="."))
+      pdata1 <- dplyr::mutate(pdata1, trte=paste(treatment,temperature,sep="."))
       row.names(pdata1) <- cname
       nread <- nrow(pdata1)
       #print(pdata1)
@@ -105,13 +104,13 @@ imprints_score_abundance <- function(data, set=NULL, contrast=NULL, basetemp="37
     if (length(contrast)) {
       cons <- c()
       for (i in 1:length(contrast)) {
-        con <- strsplit(contrast[i], split="-")[[1]]
+        con <- stringr::str_split(contrast[i], split="-")[[1]]
         con <- apply(expand.grid(con,ct2), 1, paste, collapse=".")
         con <- paste(con[seq(1,length(con)-1,by=2)],con[seq(2,length(con),by=2)],sep="-")
         cons <- c(cons,con)
       }
       # print(cons)
-      contrast.matrix <- makeContrasts(contrasts=cons, levels=design)
+      contrast.matrix <- limma::makeContrasts(contrasts=cons, levels=design)
       # print(contrast.matrix)
     } else {
       stop("pls specify a contrast expression, such as 'TNFa-DMSO'.")
@@ -119,20 +118,21 @@ imprints_score_abundance <- function(data, set=NULL, contrast=NULL, basetemp="37
 
     # print(dim(data_eset))
     # print(dim(design))
-    fit <- lmFit(data_eset, design)
-    fit1 <- contrasts.fit(fit, contrast.matrix)
-    fit2 <- eBayes(fit1)#, proportion=0.2, trend=T)
+    fit <- limma::lmFit(data_eset, design)
+    fit1 <- limma::contrasts.fit(fit, contrast.matrix)
+    fit2 <- limma::eBayes(fit1)#, proportion=0.2, trend=T)
     fittoptable <- NULL
     for (i in 1:length(cons)) {
       contrast.name <- colnames(fit2$contrasts)[i]
-      top <- topTable(fit2, coef=i, number=Inf, adjust="BH", sort.by="p")
+      top <- limma::topTable(fit2, coef=i, number=Inf, adjust="BH", sort.by="p")
       top <- tibble::rownames_to_column(top, "id")
       top$contrast <- contrast.name
       top$category <- ifelse(abs(top$logFC)>=logFC_threshold & top$adj.P.Val<=adjp_threshold, "C", "N")
-      print(paste0("The category of protein change in ", contrast.name, " are as follows: "))
+      message(paste0("The category of protein change in ", contrast.name, " are as follows: "))
       print(table(top$category,useNA="ifany"))
 
-      top <- top %>% rowwise() %>% mutate(gene=getGeneName(description, pfdatabase), log10p=-log10(adj.P.Val))
+      top <- top %>% dplyr::rowwise() %>%
+        dplyr::mutate(gene=getGeneName(description, pfdatabase), log10p=-log10(adj.P.Val))
 
       xlimit <- c(-max(abs(top$logFC),na.rm=T)-0.1, max(abs(top$logFC),na.rm=T)+0.1)
       ylimit <- c(0, max(top$log10p,na.rm=T)+0.5)
@@ -156,7 +156,7 @@ imprints_score_abundance <- function(data, set=NULL, contrast=NULL, basetemp="37
       }
       q <- q + geom_hline(yintercept=-log10(adjp_threshold), linetype="dashed") +
         theme(text=element_text(size=12), plot.title=element_text(hjust=0.5, size=rel(1.2)), aspect.ratio=1)
-      ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M"), "_Changes_in_", contrast.name, ".pdf"), q, width=4, height=6)
+      ggplot2::ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M"), "_Changes_in_", contrast.name, ".pdf"), q, width=4, height=6)
 
       fittoptable <- rbind(fittoptable, top)
     }
@@ -169,7 +169,7 @@ imprints_score_abundance <- function(data, set=NULL, contrast=NULL, basetemp="37
 
   q <- ggpubr::ggdensity(fittoptable_total, x="adj.P.Val", fill="lightgray", add="mean", rug=F) +
     facet_wrap(~contrast, ncol=3)
-  ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M"), "_adjusted_p_value", ".pdf"), q, width=8.27, height=11.69)
+  ggplot2::ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M"), "_adjusted_p_value", ".pdf"), q, width=8.27, height=11.69)
 
   fittoptable_total1 <- fittoptable_total[grep("37C",fittoptable_total$contrast), ]
   names(fittoptable_total1) <- gsub("category","levelchange",names(fittoptable_total1))
@@ -179,7 +179,7 @@ imprints_score_abundance <- function(data, set=NULL, contrast=NULL, basetemp="37
   fittoptable1 <- fittoptable1[ ,c("id","description","gene","group","levelchange","SigNumber")]
   write.csv(fittoptable1, paste0(outdir,"/",format(Sys.time(),"%y%m%d_%H%M_"),dataname,"_significant_number.csv"), row.names=F)
 
-  print("The significance test results in the tested conditions are as follows:")
+  message("The significance test results in the tested conditions are as follows:")
   print(table(fittoptable1$SigNumber, fittoptable1$group))
   if (returnsplitlist) {
     fittoptable1<-split(fittoptable1, f=list(fittoptable1$group,fittoptable1$SigNumber))

@@ -17,7 +17,8 @@
 #' match the provided channel number when it is 10 or 11
 #'
 #'
-#' @import dplyr
+#' @importFrom dplyr filter group_by left_join mutate rowwise summarise top_n ungroup
+#' @importFrom magrittr %>%
 #' @export
 #' @return a dataframe
 #' @examples \dontrun{
@@ -66,7 +67,7 @@ imprints_rawread <- function(filevector, fchoose=FALSE, treatment=NULL, nread=10
     if (length(attr(data,"outdir"))==0 & length(outdir)>0) {
       attr(data,"outdir") <- outdir
     }
-    cat("The data composition under each experimental condition (read in) is:\n")
+    message("The data composition under each experimental condition (read in) is:")
     print(table(data$condition))
     return(data)
   } else {
@@ -75,11 +76,11 @@ imprints_rawread <- function(filevector, fchoose=FALSE, treatment=NULL, nread=10
     dirname_l <- unlist(strsplit(dirname, split="/"))
     dirname <- dirname_l[length(dirname_l)]
     indata <- ms_innerread(filevector[1], fchoose, treatment, nread, abdread, PDversion, fdrcontrol, refchannel, channels)
-    indata <- mutate(indata, condition = paste0(condition,".1"))
+    indata <- dplyr::mutate(indata, condition = paste0(condition,".1"))
     outdata <- indata
     for (i in 2:flength) {
       indata <- ms_innerread(filevector[i], fchoose, treatment, nread, abdread, PDversion, fdrcontrol, refchannel, channels)
-      indata <- mutate(indata, condition = paste0(condition, ".", i))
+      indata <- dplyr::mutate(indata, condition = paste0(condition, ".", i))
       outdata <- rbind(x=outdata, y=indata, by=NULL)
     }
     outdata <- ms_dircreate(paste0("merged_",dirname), outdata)
@@ -91,7 +92,7 @@ imprints_rawread <- function(filevector, fchoose=FALSE, treatment=NULL, nread=10
     if (length(attr(outdata,"outdir"))==0 & length(outdir)>0) {
       attr(outdata,"outdir") <- outdir
     }
-    cat("The data composition under each experimental condition (read in) is:\n")
+    message("The data composition under each experimental condition (read in) is:")
     print(table(outdata$condition))
     return(outdata)
   }

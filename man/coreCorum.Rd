@@ -19,7 +19,7 @@ A data frame with 5280 rows and 21 variables:
 coreCorum
 }
 \description{
-A dataset containing CORUM complexes from 28.11.2022 Corum 4.1 release..
+A dataset containing CORUM complexes from 28.11.2022 Corum 4.1 release,
 can be looked up using "View(IMPRINTS.CETSA::coreCorum)"
 }
 \keyword{datasets}

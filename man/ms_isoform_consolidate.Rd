@@ -44,5 +44,4 @@ data_cleaned2 <- ms_isoform_consolidate(data_cleaned1,
               matchtable="./subfolder/tobe_consolidated.txt", withabd=TRUE)
 }
 
-
 }

@@ -4,16 +4,18 @@
 \alias{imprints_average}
 \title{imprints_average}
 \usage{
-imprints_average(data)
+imprints_average(data, savefile = TRUE)
 }
 \arguments{
 \item{data}{dataset after calculating the relative protein abundance differences}
+
+\item{savefile}{a logical to tell if you want save the results or not}
 }
 \value{
 a dataframe
 }
 \description{
-Function to calculate the averaged signals from the IMPRTINTS-CETSA result
+Function to calculate the averaged signals from the IMPRINTS-CETSA result
 }
 \examples{
 \dontrun{

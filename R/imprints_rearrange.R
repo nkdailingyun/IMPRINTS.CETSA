@@ -16,7 +16,8 @@
 #' count of proteins, default value is 2
 #' @param extraid a vector of UniprotID to be included in the subset dataset
 #'
-#' @import dplyr tidyr
+#' @importFrom tidyr expand gather separate unite
+#' @importFrom dplyr filter group_by inner_join left_join mutate n rowwise summarise top_n ungroup
 #' @export
 #' @return a dataframe
 #' @examples \dontrun{
@@ -35,9 +36,10 @@ imprints_rearrange <- function(data, nread=9, repthreshold=0.75, withabdreading=
   data_copy <- data
 
   if (repthreshold>0) {
-    counttable <- count(data, id) %>% mutate(freq=n/max(n)) %>% filter(freq>=repthreshold)
+    counttable <- dplyr::count(data, id) %>% dplyr::mutate(freq=n/max(n)) %>%
+      dplyr::filter(freq>=repthreshold)
     data <- subset(data, id %in% counttable$id)
-    print(paste0(nrow(counttable), " proteins pass the measurement replicates cutoff ", repthreshold*100, "%."))
+    message(paste0(nrow(counttable), " proteins pass the measurement replicates cutoff ", repthreshold*100, "%."))
   }
 
   if (withabdreading) {
@@ -46,14 +48,14 @@ imprints_rearrange <- function(data, nread=9, repthreshold=0.75, withabdreading=
       refdata <- subset(data, condition==refcond)
     } else if (length(refcond)>1) {
       refdata <- subset(data, condition%in%refcond)
-      refdata <- count(refdata,id) %>% filter(n==length(refcond))
+      refdata <- dplyr::count(refdata,id) %>% dplyr::filter(n==length(refcond))
     }
-    print(paste0(length(unique(refdata$id)), " proteins are measured at ",basetemp," and they are kept."))
+    message(paste0(length(unique(refdata$id)), " proteins are measured at ",basetemp," and they are kept."))
     data <- subset(data, id %in% refdata$id)
   }
 
   if (length(extraid)) {
-    print(paste0("To include extra ", length(extraid), " proteins as specified"))
+    message(paste0("To include extra ", length(extraid), " proteins as specified."))
     extraid <- setdiff(extraid, unique(data$id))
     data <- rbind(data, data_copy[which(data_copy$id %in% extraid),])
   }
@@ -61,7 +63,7 @@ imprints_rearrange <- function(data, nread=9, repthreshold=0.75, withabdreading=
   d1 <- tidyr::gather(data[ ,c(1,3,4:(3+nread))], treatment, reading, -id, -condition)
   d1 <- tidyr::unite(d1, combinedcol, condition, treatment, sep="_")
   d1 <- tidyr::spread(d1, combinedcol, reading)
-  data1 <- unique(data[ ,c(1,2)]) %>% inner_join(d1) #%>% rowwise() %>% mutate(gene=getGeneName(description))
+  data1 <- unique(data[ ,c(1,2)]) %>% dplyr::inner_join(d1, by="id") #%>% rowwise() %>% mutate(gene=getGeneName(description))
 
   if (averagecount) {
     counttable <- NULL
@@ -70,11 +72,11 @@ imprints_rearrange <- function(data, nread=9, repthreshold=0.75, withabdreading=
     countpos <- grep("^countNum", names(data), value=F)
     pos <- c(peppos, psmpos, countpos)
     if (length(pos) > 1) {
-      counttable <- group_by(data[ ,c(1,pos)], id) %>%
-        summarize(sumUniPeps=median(sumUniPeps), sumPSMs=median(sumPSMs), countNum=median(countNum))
+      counttable <- dplyr::group_by(data[ ,c(1,pos)], id) %>%
+        dplyr::summarise(sumUniPeps=median(sumUniPeps), sumPSMs=median(sumPSMs), countNum=median(countNum))
       if (countthreshold > 0) {
         counttable <- subset(counttable, countNum>=countthreshold)
-        print(paste0(nrow(counttable), " proteins pass the count number cutoff ", countthreshold, "."))
+        message(paste0(nrow(counttable), " proteins pass the cutoff of PSM count number ", countthreshold, "."))
       }
     }
     data1 <- merge(data1, counttable)

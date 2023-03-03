@@ -16,7 +16,6 @@
 #' @param returnlist whether to return as list but not as dataframe,
 #' default set to FALSE
 #'
-#' @import dplyr Biobase
 #' @import ggpubr
 #' @import ggrepel
 #' @export
@@ -34,13 +33,12 @@ imprints_reproducible <- function(data, set=NULL, treatment=NULL,
   data <- ms_directory(data, dataname)$data
   data_copy <- data
 
-  if (length(grep("countNum", names(data)))) {
-    countinfo <- unique(data[ ,c("id","sumUniPeps","sumPSMs","countNum")])
-    data <- data[ ,!(names(data) %in% c("sumUniPeps","sumPSMs","countNum"))]
-  }
-
   if (length(grep("description", names(data)))) {
     proteininfo <- unique(data[ ,c("id","description")])
+  }
+  if (length(grep("countNum", names(data)))) {
+    countinfo <- unique(data[ ,stringr::str_which(names(data), "^id$|^sumPSM|^countNum|^sumUniPeps")])
+    data <- data[ ,-stringr::str_which(names(data), "^sumPSM|^countNum|^sumUniPeps")]
   }
 
   if (length(set)==1) { data <- data[ ,c(1,2,grep(set,names(data)))] }
@@ -56,19 +54,20 @@ imprints_reproducible <- function(data, set=NULL, treatment=NULL,
     for (i in unique(datal1$treatment)) {
       datal_temp <- subset(datal1, treatment==i)
       if (sum(abs(datal_temp$reading),na.rm=T)==0) {next}
-      print(paste0("in condition: ", i))
-      datal_score <- datal_temp %>% group_by(id, set, treatment, temperature) %>%
-        summarize(mreading=mean(reading,na.rm=T), sdreading=sd(reading, na.rm=T))
-      reproducible1 <- datal_score %>% group_by(id) %>% summarise(cvreading=sqrt(exp(mean(sdreading,na.rm=T)^2)-1)) %>%
-        filter(cvreading<=cvthreshold)
-      print(paste0(nrow(reproducible1), " proteins passed the cv cutoff..."))
+      message(paste0("in condition: ", i))
+      datal_score <- datal_temp %>% dplyr::group_by(id, set, treatment, temperature) %>%
+        dplyr::summarise(mreading=mean(reading,na.rm=T), sdreading=sd(reading, na.rm=T))
+      reproducible1 <- datal_score %>% dplyr::group_by(id) %>%
+        dplyr::summarise(cvreading=sqrt(exp(mean(sdreading,na.rm=T)^2)-1)) %>%
+        dplyr::filter(cvreading<=cvthreshold)
+      message(paste0(nrow(reproducible1), " proteins passed the cv cutoff."))
       reproducible2 <- tidyr::spread(datal_temp, replicate, reading)
       reproducible2 <- plyr::ddply(reproducible2, "id", function(data) {
         a <- cor(data[ ,-c(1:4)], use="complete.obs")
         data.frame(corr=mean(a[lower.tri(a)]))
       })
       reproducible2 <- subset(reproducible2, corr>=corrthreshold)
-      print(paste0(nrow(reproducible2), " proteins passed the correlation cutoff..."))
+      message(paste0(nrow(reproducible2), " proteins passed the correlation cutoff."))
       datal_temp <- subset(datal_temp, id %in% unique(c(reproducible1$id,reproducible2$id)))
       datal_temp <- tidyr::unite(datal_temp, condition, temperature, replicate, treatment, sep="_")
       datal_temp <- tidyr::spread(datal_temp, condition, reading)
@@ -88,19 +87,20 @@ imprints_reproducible <- function(data, set=NULL, treatment=NULL,
     for (i in unique(datal1$treatment)) {
       datal_temp <- subset(datal1, treatment==i)
       if (sum(abs(datal_temp$reading),na.rm=T)==0) {next}
-      print(paste0("in condition: ", i))
-      datal_score <- datal_temp %>% group_by(id, treatment, temperature) %>%
-        summarize(mreading=mean(reading,na.rm=T), sdreading=sd(reading, na.rm=T))
-      reproducible1 <- datal_score %>% group_by(id) %>% summarise(cvreading=sqrt(exp(mean(sdreading,na.rm=T)^2)-1)) %>%
-        filter(cvreading<=cvthreshold)
-      print(paste0(nrow(reproducible1), " proteins passed the cv cutoff..."))
+      message(paste0("in condition: ", i))
+      datal_score <- datal_temp %>% dplyr::group_by(id, treatment, temperature) %>%
+        dplyr::summarise(mreading=mean(reading,na.rm=T), sdreading=sd(reading, na.rm=T))
+      reproducible1 <- datal_score %>% dplyr::group_by(id) %>%
+        dplyr::summarise(cvreading=sqrt(exp(mean(sdreading,na.rm=T)^2)-1)) %>%
+        dplyr::filter(cvreading<=cvthreshold)
+      message(paste0(nrow(reproducible1), " proteins passed the cv cutoff."))
       reproducible2 <- tidyr::spread(datal_temp, replicate, reading)
       reproducible2 <- plyr::ddply(reproducible2, "id", function(data) {
         a <- cor(data[ ,-c(1:3)], use="complete.obs")
         data.frame(corr=mean(a[lower.tri(a)]))
       })
       reproducible2 <- subset(reproducible2, corr>=corrthreshold)
-      print(paste0(nrow(reproducible2), " proteins passed the correlation cutoff..."))
+      message(paste0(nrow(reproducible2), " proteins passed the correlation cutoff."))
       datal_temp <- subset(datal_temp, id %in% unique(c(reproducible1$id,reproducible2$id)))
       datal_temp <- tidyr::unite(datal_temp, condition, temperature, replicate, treatment, sep="_")
       datal_temp <- tidyr::spread(datal_temp, condition, reading)

@@ -17,10 +17,8 @@
 #'
 #'
 #' @importFrom plyr . ddply
-#' @import dplyr
-#' @import ggplot2
-#' @import GGally
-#' @import gridExtra
+#' @importFrom ggplot2 ggsave
+#' @importFrom GGally ggcorr
 #' @export
 #' @return a dataframe
 #' @examples \dontrun{
@@ -44,19 +42,19 @@ imprints_corr_in_complex <- function(data=NULL, nread=6, goodcorrcutoff=0.5, vgo
   }
 
   if (removeredundancy) {
-    complexdata <- data %>% group_by(ComplexID) %>%
-      summarise(subunitsIdentified=paste(id,collapse=";")) %>%
-      left_join(unique(data[ ,c("ComplexID","subunitsIdentifiedPerc")])) %>%
-      arrange(-subunitsIdentifiedPerc)
+    complexdata <- data %>% dplyr::group_by(ComplexID) %>%
+      dplyr::summarise(subunitsIdentified=paste(id,collapse=";")) %>%
+      dplyr::left_join(unique(data[ ,c("ComplexID","subunitsIdentifiedPerc")])) %>%
+      dplyr::arrange(-subunitsIdentifiedPerc)
 
     i = 1
     while (i<nrow(complexdata)) {
       # l1 holds the members of query complex
-      l1 <- strsplit(as.character(complexdata[i,2]),";")[[1]]
+      l1 <- stringr::str_split(as.character(complexdata[i,2]),";")[[1]]
       l <- c()
       for (k in (i+1):nrow(complexdata)) {
         # l2 holds the members of subject complex
-        l2 <- strsplit(as.character(complexdata[k,2]),";")[[1]]
+        l2 <- stringr::str_split(as.character(complexdata[k,2]),";")[[1]]
         l <- c(l,sum(l1%in%l2)/min(length(l1),length(l2)))
       }
       if (length(which(l>=similaritythreshold))>0) {
@@ -67,18 +65,17 @@ imprints_corr_in_complex <- function(data=NULL, nread=6, goodcorrcutoff=0.5, vgo
       i=i+1
     }
     data <- subset(data, ComplexID %in% complexdata$ComplexID)
-    print("The number of multi-protein complexes after the removal of redundancy is: ")
-    print(length(unique(data$ComplexID)))
-    # return(data)
+    message(paste0("The number of multi-protein complexes after the removal of redundancy is: ",
+            length(unique(data$ComplexID))))
   } else {
-    print("The number of multi-protein complexes to analyze is: ")
-    print(length(unique(data$ComplexID)))
+    message(paste0("The number of multi-protein complexes to analyze is: ",
+                   length(unique(data$ComplexID))))
   }
 
   corr <- plyr::ddply(data, plyr::.(ComplexID), function(data) {
     if (sum(duplicated(data$gene))>0) {
-      print("Found the following duplicated gene, need to be removed")
-      stop(print(data[duplicated(data$gene), c("ComplexID","id","gene")]))
+      message("Found the following duplicated gene, need to be removed.")
+      stop(message(data[duplicated(data$gene), c("ComplexID","id","gene")]))
     }
     name = unique(data[ ,2])
     genepos <- grep("^gene", names(data))
@@ -94,15 +91,17 @@ imprints_corr_in_complex <- function(data=NULL, nread=6, goodcorrcutoff=0.5, vgo
       correlation = (correlation_table)[ut]
     )
   } )
-  ms_filewrite(corr, paste0("Correlation_in_", dataname, ".txt"), outdir=outdir, withdescription=F)
+  ms_filewrite(corr, paste0("correlation_in_", dataname, ".txt"),
+               outdir=outdir, withdescription=F)
 
-  corr_table <- corr %>% group_by(ComplexID, ComplexName) %>%
-    summarise(mediancorr=median(correlation,na.rm=T), numofcorr=n(),
-              goodcorr=sum(correlation>goodcorrcutoff,na.rm=T),
-              vgoodcorr=sum(correlation>vgoodcorrcutoff,na.rm=T),
-              goodcorrperc=goodcorr/numofcorr, vgoodcorrperc=vgoodcorr/numofcorr) %>%
-    arrange(-mediancorr*log(numofcorr))
-  ms_filewrite(corr_table, paste0("Summarized_Correlation_in_", dataname, ".txt"), outdir=outdir, withdescription=F)
+  corr_table <- corr %>% dplyr::group_by(ComplexID, ComplexName) %>%
+    dplyr::summarise(mediancorr=median(correlation,na.rm=T), numofcorr=n(),
+                  goodcorr=sum(correlation>goodcorrcutoff,na.rm=T),
+                  vgoodcorr=sum(correlation>vgoodcorrcutoff,na.rm=T),
+                  goodcorrperc=goodcorr/numofcorr, vgoodcorrperc=vgoodcorr/numofcorr) %>%
+    dplyr::arrange(-mediancorr*log(numofcorr))
+  ms_filewrite(corr_table, paste0("summarized_correlation_in_", dataname, ".txt"),
+               outdir=outdir, withdescription=F)
 
   if (doplotting) {
     data$ComplexID <- factor(data$ComplexID, levels=corr_table$ComplexID)
@@ -139,10 +138,13 @@ imprints_corr_in_complex <- function(data=NULL, nread=6, goodcorrcutoff=0.5, vgo
     })
 
     class(pl) <- c("arrangelist", "ggplot", class(pl))
-    ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M"),"_",dataname,"_correlation_in_complex.pdf"), pl, height=11.69, width=8.27)
+    ggplot2::ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M"),"_",
+                                dataname,"_correlation_in_complex.pdf"), pl, height=11.69, width=8.27)
 
     if (external) { external_graphs(F) } # switch off the external graphs
   }
-
+  if (length(attr(corr,"outdir"))==0 & length(outdir)>0) {
+    attr(corr,"outdir") <- outdir
+  }
   return(corr)
 }

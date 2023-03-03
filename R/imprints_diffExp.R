@@ -16,9 +16,8 @@
 #' @param labelgeneid a vector of the gene symbol id to show on the plot
 
 #'
-#' @import dplyr Biobase
-#' @import limma
-#' @import ggplot2
+#' @importFrom limma contrasts.fit eBayes lmFit makeContrasts topTable
+#' @importFrom ggplot2 ggsave
 #' @import ggrepel
 #' @export
 #' @return a dataframe
@@ -41,7 +40,8 @@ imprints_diffExp <- function(data, set=NULL, basetemp="37C", contrast=NULL,
     proteininfo <- unique(data[ ,c("id","description")])
   }
   if (length(grep("countNum", names(data)))) {
-    countinfo <- unique(data[ ,c("id","sumUniPeps","sumPSMs","countNum")])
+    countinfo <- unique(data[ ,stringr::str_which(names(data), "^id$|^sumPSM|^countNum|^sumUniPeps")])
+    data <- data[ ,-stringr::str_which(names(data), "^sumPSM|^countNum|^sumUniPeps")]
   }
 
   if (length(set)>0) {
@@ -96,22 +96,25 @@ imprints_diffExp <- function(data, set=NULL, basetemp="37C", contrast=NULL,
   } else {
     stop("pls specify a contrast expression, such as 'TNFa-DMSO'.")
   }
-  fit <- lmFit(data_eset, design)
-  fit1 <- contrasts.fit(fit, contrast.matrix)
-  fit2 <- eBayes(fit1)#, proportion=0.2, trend=T)
+  fit <- limma::lmFit(data_eset, design)
+  fit1 <- limma::contrasts.fit(fit, contrast.matrix)
+  fit2 <- limma::eBayes(fit1)#, proportion=0.2, trend=T)
   fittoptable <- NULL
   for (i in 1:length(contrast)) {
     contrast.name <- colnames(fit2$contrasts)[i]
-    top <- topTable(fit2, coef=i, number=Inf, adjust="BH", sort.by="p")
+    top <- limma::topTable(fit2, coef=i, number=Inf, adjust="BH", sort.by="p")
     top <- tibble::rownames_to_column(top, "id")
     top$contrast <- contrast.name
     top$category <- ifelse(abs(top$logFC)>=logFC_threshold & top$adj.P.Val<=adjp_threshold, "C", "N")
     top$category <- factor(top$category, levels=c("C","N"))
-    print(paste0("The category of expression level change in ", contrast.name, " are as follows: "))
+    message(paste0("The categories of expression level change in ", contrast.name, " are as follows: "))
     print(table(top$category))
     ms_filewrite(top, paste0(dataname, "_",contrast.name,"_eBays.txt"), outdir=outdir)
 
-    top <- top %>% rowwise() %>% mutate(gene=getGeneName(description,pfdatabase), log10p=-log10(adj.P.Val)) %>% ungroup()
+    top <- top %>% dplyr::rowwise() %>%
+      dplyr::mutate(gene=getGeneName(description,pfdatabase),
+                    log10p=-log10(adj.P.Val)) %>%
+      dplyr::ungroup()
 
     if(!length(xlimit)) {xlimit <- c(-max(abs(top$logFC),na.rm=T)-0.1, max(abs(top$logFC),na.rm=T)+0.1)}
     if(!length(ylimit)) {ylimit <- c(min(top$log10p,na.rm=T), max(top$log10p,na.rm=T)+0.1)}
@@ -133,7 +136,8 @@ imprints_diffExp <- function(data, set=NULL, basetemp="37C", contrast=NULL,
     }
     q <- q + geom_hline(yintercept=-log10(adjp_threshold), linetype="dashed") +
       theme(text=element_text(size=12), plot.title=element_text(hjust=0.5, size=rel(1.2)), aspect.ratio=1)
-    ggsave(filename=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M"), "_Protein_abundance_Changes_in_", contrast.name, ".pdf"), q, width=8.27, height=11.69)
+    ggplot2::ggsave(filename=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M"),
+                                    "_Protein_abundance_Changes_in_", contrast.name, ".pdf"), q, width=8.27, height=11.69)
 
     # to make scatter plot
     name1 <- unlist(strsplit(contrast.name, "-"))[1]
@@ -164,7 +168,8 @@ imprints_diffExp <- function(data, set=NULL, basetemp="37C", contrast=NULL,
     }
     qs <- qs + geom_abline(slope=1,intercept=0, linetype="dashed", color="blue") +
       theme(text=element_text(size=12), plot.title=element_text(hjust=0.5, size=rel(1.2)), aspect.ratio=1)
-    ggsave(filename=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M"), "_Protein_abundance_in_", contrast.name, ".pdf"), qs, width=8.27, height=11.69)
+    ggplot2::ggsave(filename=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M"),
+                                    "_Protein_abundance_in_", contrast.name, ".pdf"), qs, width=8.27, height=11.69)
 
     fittoptable <- rbind(fittoptable, top)
   }

@@ -20,7 +20,6 @@
 #' @param labelcategory the categories of nodes to label, default value is c("CC","NC","CN")
 #' @param labelgeneid a vector of the gene symbol id to show on the plot, exclusive from labelcategory
 #'
-#' @import dplyr Biobase
 #' @import ggpubr
 #' @import ggrepel
 #' @export
@@ -44,23 +43,23 @@ imprints_globalview <- function(data, basetemp="37C", qc=TRUE, cvthreshold=0.1, 
     data$description <- NULL
   }
   if (length(grep("countNum", names(data)))) {
-    countinfo <- unique(data[ ,c("id","sumUniPeps","sumPSMs","countNum")])
-    data <- data[ ,!(names(data) %in% c("sumUniPeps","sumPSMs","countNum"))]
+    countinfo <- unique(data[ ,stringr::str_which(names(data), "^id$|^sumPSM|^countNum|^sumUniPeps")])
+    data <- data[ ,-stringr::str_which(names(data), "^sumPSM|^countNum|^sumUniPeps")]
   }
 
   refcol <- which(apply(data[,-1],2,sum,na.rm=T)==0)
-  datal <- gather(data[ ,-(refcol+1)], condition, reading, -id)
+  datal <- tidyr::gather(data[ ,-(refcol+1)], condition, reading, -id)
   if (length(unlist(strsplit(datal$condition[1], "_")))==4) {
     datal1 <- tidyr::separate(datal, condition, into=c("set","temperature","replicate","treatment"), sep="_")
-    datal <- datal1 %>% group_by(id, set, treatment, temperature) %>%
-      summarize(mreading=mean(reading,na.rm=T), sdreading=sd(reading, na.rm=T))
+    datal <- datal1 %>% dplyr::group_by(id, set, treatment, temperature) %>%
+      dplyr::summarise(mreading=mean(reading,na.rm=T), sdreading=sd(reading, na.rm=T))
     datal_copy <- datal
     datal_copy <- merge(proteininfo, datal_copy)
     names(datal_copy)[c(6:7)] <- c("arithmetic mean","standard deviation")
     ms_filewrite(datal_copy, paste0("summaried_readings_in_", dataname, ".txt"), outdir=outdir)
     if (qc) {
-      reproducible1 <- datal %>% group_by(id,set,treatment) %>% summarise(cvreading=sqrt(exp(mean(sdreading,na.rm=T)^2)-1)) %>%
-        filter(cvreading<=cvthreshold)
+      reproducible1 <- datal %>% dplyr::group_by(id,set,treatment) %>% dplyr::summarise(cvreading=sqrt(exp(mean(sdreading,na.rm=T)^2)-1)) %>%
+        dplyr::filter(cvreading<=cvthreshold)
       reproducible2 <- tidyr::spread(datal1, replicate, reading)
       reproducible2 <- plyr::ddply(reproducible2, "id", function(data) {
         a <- cor(data[ ,-c(1:4)], use="complete.obs")
@@ -69,21 +68,23 @@ imprints_globalview <- function(data, basetemp="37C", qc=TRUE, cvthreshold=0.1, 
       reproducible2 <- subset(reproducible2, corr>=corrthreshold)
       datal <- subset(datal, id %in% unique(c(reproducible1$id,reproducible2$id)))
     }
-    datal_Cchange <- datal %>% group_by(id,set,treatment) %>% summarize(change=max(mreading,na.rm=T)-min(mreading,na.rm=T))
+    datal_Cchange <- datal %>% dplyr::group_by(id,set,treatment) %>%
+      dplyr::summarise(change=max(mreading,na.rm=T)-min(mreading,na.rm=T))
     datal_Echange <- datal[grep(basetemp, datal$temperature), c(1,2,3,5)]
     datal_change <- na.omit(merge(datal_Echange, datal_Cchange))
     names(datal_change)[c(4,5)] <- c("abundancechange", "stabilitychange")
   } else if (length(unlist(strsplit(datal$condition[1], "_")))==3) {
     datal1 <- tidyr::separate(datal, condition, into=c("temperature","replicate","treatment"), sep="_")
-    datal <- datal1 %>% group_by(id, treatment, temperature) %>%
-      summarize(mreading=mean(reading,na.rm=T), sdreading=sd(reading, na.rm=T))
+    datal <- datal1 %>% dplyr::group_by(id, treatment, temperature) %>%
+      dplyr::summarise(mreading=mean(reading,na.rm=T), sdreading=sd(reading, na.rm=T))
     datal_copy <- datal
     datal_copy <- merge(proteininfo, datal_copy)
     names(datal_copy)[c(5:6)] <- c("arithmetic mean","standard deviation")
     ms_filewrite(datal_copy, paste0("summaried_readings_in_", dataname, ".txt"), outdir=outdir)
     if (qc) {
-      reproducible1 <- datal %>% group_by(id,treatment) %>% summarise(cvreading=sqrt(exp(mean(sdreading,na.rm=T)^2)-1)) %>%
-        filter(cvreading<=cvthreshold)
+      reproducible1 <- datal %>% dplyr::group_by(id,treatment) %>%
+        dplyr::summarise(cvreading=sqrt(exp(mean(sdreading,na.rm=T)^2)-1)) %>%
+        dplyr::filter(cvreading<=cvthreshold)
       reproducible2 <- tidyr::spread(datal1, replicate, reading)
       reproducible2 <- plyr::ddply(reproducible2, "id", function(data) {
         a <- cor(data[ ,-c(1:3)], use="complete.obs")
@@ -102,27 +103,27 @@ imprints_globalview <- function(data, basetemp="37C", qc=TRUE, cvthreshold=0.1, 
     abundancecutoff <- abundancechange_cutoff
   } else {
     abundancecutoff <- median(datal_change$abundancechange,na.rm=T)+abundancechange_nMAD*mad(datal_change$abundancechange,na.rm=T)
-    print(paste0("Abundance level change cutoff set at ", round(abundancecutoff,3)))
+    message(paste0("Abundance level change cutoff set at ", round(abundancecutoff,3)))
   }
   if (length(stabilitychange_cutoff)==1) {
     stabilitycutoff <- stabilitychange_cutoff
   } else {
     stabilitycutoff <- median(datal_change$stabilitychange,na.rm=T)+stabilitychange_nMAD*mad(datal_change$stabilitychange,na.rm=T)
-    print(paste0("Stability level change cutoff set at ", round(stabilitycutoff,3)))
+    message(paste0("Stability level change cutoff set at ", round(stabilitycutoff,3)))
   }
 
-  datal_change <- datal_change %>% rowwise() %>%
-    mutate(abundance.hit = ifelse(abs(abundancechange)<abundancecutoff, F, T)) %>%
+  datal_change <- datal_change %>% dplyr::rowwise() %>%
+    dplyr::mutate(abundance.hit = ifelse(abs(abundancechange)<abundancecutoff, F, T)) %>%
     #mutate(basechangedir = ifelse(mreading < 0, "-", "+")) %>%
-    mutate(stability.hit = ifelse(stabilitychange<stabilitycutoff, F, T)) %>%
-    mutate(category=paste0(abundance.hit, stability.hit))
+    dplyr::mutate(stability.hit = ifelse(stabilitychange<stabilitycutoff, F, T)) %>%
+    dplyr::mutate(category=paste0(abundance.hit, stability.hit))
   datal_change$category <- gsub("FALSE","N",datal_change$category)
   datal_change$category <- gsub("TRUE","C",datal_change$category)
 
-  datal_change <- proteininfo %>% rowwise() %>% mutate(gene=getGeneName(description, pfdatabase)) %>%
-    inner_join(datal_change) %>% arrange(category)
+  datal_change <- proteininfo %>% dplyr::rowwise() %>% dplyr::mutate(gene=getGeneName(description, pfdatabase)) %>%
+    dplyr::inner_join(datal_change) %>% dplyr::arrange(category)
 
-  print(paste0("The category of abundance level change and thermal stability shift are as follows: "))
+  message(paste0("The category of abundance level change and thermal stability shift are as follows: "))
   print(table(datal_change$category))
 
   if(!length(xrange)) {

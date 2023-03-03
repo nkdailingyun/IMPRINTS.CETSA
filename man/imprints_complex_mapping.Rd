@@ -9,10 +9,10 @@ imprints_complex_mapping(
   categorytable = NULL,
   set = NULL,
   treatment = NULL,
-  targetcategory = c("NC", "CN", "CC"),
   complexdatabase = "Corum",
   organism = "Human",
   complexID = NULL,
+  targetcategory = c("NC", "CN", "CC"),
   minsubunitsIdentified = 3,
   cutisoformbycount = TRUE
 )
@@ -30,19 +30,19 @@ say the "Changed" proteins}
 
 \item{treatment}{a single character to indicate the sample name to analyze}
 
-\item{targetcategory}{the default value is c("NC","CN","CC")}
-
-\item{complexdatabase}{by default is core Corum database, 03.09.2018 Corum 3.0 current release}
+\item{complexdatabase}{by default is core Corum database, 28.11.2022 Corum 4.1 release}
 
 \item{organism}{choose from Human/Mouse/Rat, default is Human}
 
 \item{complexID}{a vector of complexID to retrieve from the data, if specified}
 
+\item{targetcategory}{a character vector to select the category you want, the default is c("NC","CN","CC")}
+
 \item{minsubunitsIdentified}{the minimal number of subunits should be identified,
 default value is 3}
 
-\item{cutisoformbycount}{when there are several isoforms mapped in a complex, by default to
-filter away the isoforms with comparatively fewer count number}
+\item{cutisoformbycount}{when there are several isoforms mapped in a protein complex, by default to
+filter away the isoforms with comparatively fewer PSM count number}
 }
 \value{
 a dataframe

@@ -14,7 +14,8 @@
 #' when there is isoform difference, the first dataset would be used as the reference name
 #'
 #'
-#' @import dplyr
+#' @importFrom tidyr expand gather separate unite
+#' @importFrom dplyr filter group_by left_join mutate rowwise summarise top_n ungroup
 #' @export
 #' @return a dataframe
 #' @examples \dontrun{
@@ -81,11 +82,11 @@ imprints_correlation <- function(data=NULL, setvector=NULL, treatmentvector=NULL
 
   if (bygene) {
     # merge by the gene symbol
-    data1 <- data1 %>% rowwise() %>% mutate(gene = getGeneName(description))
+    data1 <- data1 %>% dplyr::rowwise() %>% dplyr::mutate(gene = getGeneName(description))
     if (anyNA(data1$gene)) {
       data1 <- data1[-which(is.na(data1$gene)), ]
     }
-    data2 <- data2 %>% rowwise() %>% mutate(gene = getGeneName(description))
+    data2 <- data2 %>% dplyr::rowwise() %>% dplyr::mutate(gene = getGeneName(description))
     if (anyNA(data2$gene)) {
       data2 <- data2[-which(is.na(data2$gene)), ]
     }
@@ -105,36 +106,36 @@ imprints_correlation <- function(data=NULL, setvector=NULL, treatmentvector=NULL
     # print(head(data))
   }
   # return(data)
-  print(paste0("The number of protein entries in common is ", nrow(data)))
+  message(paste0("The number of protein entries in common is ", nrow(data)))
   #print(unique(data$gene))
   if (bygene & sum(duplicated(data$gene))) {
-    print(paste0(sum(duplicated(data$gene)), " genes were duplicated and removed: "))
+    message(paste0(sum(duplicated(data$gene)), " genes were duplicated and removed: "))
     dup_gene <- sort(unique(data$gene[duplicated(data$gene)]))
-    print(dup_gene)
+    message(paste0("The duplicated genes include ", dup_gene))
     data <- data[-which(data$gene %in% dup_gene), ]
   }
   # return(data)
   if (bygene) {
-    datal <- gather(data, treatment, reading, -gene)
+    datal <- tidyr::gather(data, treatment, reading, -gene)
   } else {
-    datal <- gather(data, treatment, reading, -id)
+    datal <- tidyr::gather(data, treatment, reading, -id)
   }
   if (length(unlist(strsplit(datal$treatment[1], "_")))==3) {
-    datal <- separate(datal, treatment, into=c("set","temperature","condition"))
-    datal <- unite(datal, "condition", c("set","condition"))
+    datal <- tidyr::separate(datal, treatment, into=c("set","temperature","condition"))
+    datal <- tidyr::unite(datal, "condition", c("set","condition"))
   } else if (length(unlist(strsplit(datal$treatment[1], "_")))==2) {
-    datal <- separate(datal, treatment, into=c("temperature","condition"))
+    datal <- tidyr::separate(datal, treatment, into=c("temperature","condition"))
   }
   treatment = unique(datal$condition)
   print(paste0("The conditions for correlation calculation are ", treatment[1], " and ", treatment[2]))
-  dataw <- spread(datal, condition, reading)
+  dataw <- tidyr::spread(datal, condition, reading)
   # print(as.character(eval(parse(text = treatment[1]))))
   # print(head(dataw))
   # return(list(datal=datal, dataw=dataw, treatment=treatment))
   if (bygene) {
-    cortable <- group_by(dataw,gene) %>%
-      summarize(correlation=cor(eval(parse(text=treatment[1])),eval(parse(text=treatment[2])), use="complete.obs"))
-    dataw <- spread(datal, temperature, reading)
+    cortable <- dplyr::group_by(dataw,gene) %>%
+      dplyr::summarise(correlation=cor(eval(parse(text=treatment[1])),eval(parse(text=treatment[2])), use="complete.obs"))
+    dataw <- tidyr::spread(datal, temperature, reading)
     dism <- plyr::ddply(dataw, "gene", function(data) {
       data<-data[order(data$condition), ]
       dm<-as.matrix(dist(data[ ,-c(1:2)]))[1,2]
@@ -146,9 +147,9 @@ imprints_correlation <- function(data=NULL, setvector=NULL, treatmentvector=NULL
     cortable <- merge(cortable,dism)
     return(cortable[order(cortable$correlation,decreasing=T),-1])
   } else {
-    cortable <- group_by(dataw,id) %>%
-      summarize(correlation=cor(eval(parse(text=treatment[1])),eval(parse(text=treatment[2])), use="complete.obs"))
-    dataw <- spread(datal, temperature, reading)
+    cortable <- dplyr::group_by(dataw,id) %>%
+      dplyr::summarise(correlation=cor(eval(parse(text=treatment[1])),eval(parse(text=treatment[2])), use="complete.obs"))
+    dataw <- tidyr::spread(datal, temperature, reading)
     dism <- plyr::ddply(dataw, "id", function(data) {
       data<-data[order(data$condition), ]
       dm<-as.matrix(dist(data[ ,-c(1:2)]))[1,2]

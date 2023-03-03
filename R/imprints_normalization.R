@@ -16,7 +16,9 @@
 #' @param pertemp whether do the normalization on each heating temperature separately,
 #' default set to TRUE
 #'
-#' @import dplyr vsn limma arrayQualityMetrics
+#' @import vsn
+#' @importFrom limma contrasts.fit eBayes lmFit makeContrasts topTable
+#' @importFrom Biobase exprs phenoData
 #' @export
 #' @return a dataframe
 #' @examples \dontrun{
@@ -28,12 +30,12 @@
 imprints_normalization <- function(datafile, isfile=FALSE, todf=TRUE, pertemp=TRUE) {
 
   if (isfile) {
-    outdir <- strsplit(datafile,"/")[[1]][2]
+    outdir <- stringr:str_split(datafile,"/")[[1]][2]
     rows <- read.table(file=datafile, header=FALSE, nrows=10, fill=T)[ ,1]
     pos <- grep("^id$", rows)
     data <- readr::read_tsv(file=datafile, skip=(pos-1))
     pdata <- NULL
-    pdata <- read.table(file=datafile, header=FALSE, nrows=(pos-1), stringsAsFactors=FALSE, row.names=NULL)
+    pdata <- readr::read.table(file=datafile, header=FALSE, nrows=(pos-1), stringsAsFactors=FALSE, row.names=NULL)
     if (nrow(pdata)==0) {
       stop("Remember to add the necessary information of experimental scheme in the data file!")
     }
@@ -73,23 +75,25 @@ imprints_normalization <- function(datafile, isfile=FALSE, todf=TRUE, pertemp=TR
 
   data_eset_mock <- ms_to_eSet(data=na.omit(data), nread=nread, pdata=pdata1)
 
-  try(arrayQualityMetrics::arrayQualityMetrics(expressionset=data_eset_mock, outdir=paste0(dataname,"_pre_norm_QC_report"),
+  try(arrayQualityMetrics::arrayQualityMetrics(expressionset=data_eset_mock,
+                                               outdir=paste0(dataname,"_pre_norm_QC_report"),
                                                force=TRUE, do.logtransform=TRUE,
-                                               intgroup=phenoData(data_eset_mock)@varMetadata$labelDescription,
+                                               intgroup=Biobase::phenoData(data_eset_mock)@varMetadata$labelDescription,
                                                reporttitle=paste0(dataname, " Pre Normalization QC report")))
 
   # to perform vsn normalization, whether per temperature can be controlled
   if (pertemp) {
-    data1 <- exprs(data_eset)
+    data1 <- Biobase::exprs(data_eset)
     if (sum(grepl("set",names(pdata1)))) {
       uniset <- unique(as.character(data_eset$set))
       unitemp <- unique(as.character(data_eset$temperature))
       for (se in uniset) {
         for (temp in unitemp) {
           pos <- intersect(grep(se, colnames(data1)),grep(temp, colnames(data1)))
-          data_sub <- exprs(data_eset[ ,data_eset$set==se & data_eset$temperature==temp])
+          data_sub <- Biobase::exprs(data_eset[ ,data_eset$set==se & data_eset$temperature==temp])
           if (nrow(data_sub)<43) {
-            data_sub <- vsn::justvsn(data_sub,minDataPointsPerStratum=nrow(data_sub)-1)
+            data_sub <- vsn::justvsn(data_sub,
+                                     minDataPointsPerStratum=nrow(data_sub)-1)
           } else {
             data_sub <- vsn::justvsn(data_sub)
           }
@@ -101,9 +105,10 @@ imprints_normalization <- function(datafile, isfile=FALSE, todf=TRUE, pertemp=TR
       unitemp <- unique(as.character(data_eset$temperature))
       for (temp in unitemp) {
         pos <- grep(temp, colnames(data1))
-        data_sub <- exprs(data_eset[ ,data_eset$temperature==temp])
+        data_sub <- Biobase::exprs(data_eset[ ,data_eset$temperature==temp])
         if (nrow(data_sub)<43) {
-          data_sub <- vsn::justvsn(data_sub,minDataPointsPerStratum=nrow(data_sub)-1)
+          data_sub <- vsn::justvsn(data_sub,
+                                   minDataPointsPerStratum=nrow(data_sub)-1)
         } else {
           data_sub <- vsn::justvsn(data_sub)
         }
@@ -111,31 +116,35 @@ imprints_normalization <- function(datafile, isfile=FALSE, todf=TRUE, pertemp=TR
       }
       # print(head(data1))
     }
-    data_eset <- ms_to_eSet(data1, matrixonly=TRUE, nread=ncol(data1), refeset=data_eset)
+    data_eset <- ms_to_eSet(data1, matrixonly=TRUE,
+                            nread=ncol(data1), refeset=data_eset)
   } else { # do not do per temperature normalization
     if (sum(grepl("set",names(pdata1)))) {
-      data1 <- exprs(data_eset)
+      data1 <- Biobase::exprs(data_eset)
       uniset <- unique(as.character(data_eset$set))
       for (se in uniset) {
         pos <- grep(se, colnames(data1))
-        data_sub <- exprs(data_eset[ ,data_eset$set==se])
+        data_sub <- Biobase::exprs(data_eset[ ,data_eset$set==se])
         if (nrow(data_sub)<43) {
-          data_sub <- vsn::justvsn(data_sub,minDataPointsPerStratum=nrow(data_sub)-1)
+          data_sub <- vsn::justvsn(data_sub,
+                                   minDataPointsPerStratum=nrow(data_sub)-1)
         } else {
           data_sub <- vsn::justvsn(data_sub)
         }
         data1[ ,pos] <- data_sub
       }
-      data_eset <- ms_to_eSet(data1, matrixonly=TRUE, nread=ncol(data1), refeset=data_eset)
+      data_eset <- ms_to_eSet(data1, matrixonly=TRUE,
+                              nread=ncol(data1), refeset=data_eset)
     } else {
-      if (nrow(exprs(data_eset))<43) {
-        data_eset <- vsn::justvsn(data_eset,minDataPointsPerStratum=nrow(exprs(data_eset))-1)
+      if (nrow(Biobase::exprs(data_eset))<43) {
+        data_eset <- vsn::justvsn(data_eset,
+                                  minDataPointsPerStratum=nrow(Biobase::exprs(data_eset))-1)
       } else {
         data_eset <- vsn::justvsn(data_eset)
       }
     }
   }
-  data_eset1 <- limma::removeBatchEffect(exprs(data_eset),
+  data_eset1 <- limma::removeBatchEffect(Biobase::exprs(data_eset),
                                          batch=as.character(pData(data_eset)$replicate),
                                          design=model.matrix(~pData(data_eset)$treatment))
   # to perform quantile normalization
@@ -159,11 +168,13 @@ imprints_normalization <- function(datafile, isfile=FALSE, todf=TRUE, pertemp=TR
   #   print(head(data_eset1))
   # }
 
-  data_eset1 <- ms_to_eSet(data_eset1, matrixonly=TRUE, nread=ncol(data_eset1), refeset=data_eset)
+  data_eset1 <- ms_to_eSet(data_eset1, matrixonly=TRUE,
+                           nread=ncol(data_eset1), refeset=data_eset)
 
-  try(arrayQualityMetrics::arrayQualityMetrics(expressionset=data_eset1, outdir=paste0(dataname,"_post_norm_QC_report"),
+  try(arrayQualityMetrics::arrayQualityMetrics(expressionset=data_eset1,
+                                               outdir=paste0(dataname,"_post_norm_QC_report"),
                                                force=TRUE, do.logtransform=FALSE,
-                                               intgroup=phenoData(data_eset1)@varMetadata$labelDescription,
+                                               intgroup=Biobase::phenoData(data_eset1)@varMetadata$labelDescription,
                                                reporttitle=paste0(dataname, " Post Normalization QC report")))
 
   if (todf) {

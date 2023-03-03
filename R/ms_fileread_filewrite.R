@@ -7,9 +7,7 @@
 #' @param outdir the subfolder name to save the txt file
 #' @param withdescription whether the dataset contains the description column, default set to TRUE
 #'
-#' @import tidyr
 #' @importFrom readr write_tsv
-#'
 #' @export
 #' @return NULL
 #' @examples \dontrun{
@@ -63,7 +61,6 @@ ms_filewrite <- function(data, filename, outdir=NULL, withdescription=TRUE) {
 #' @param filename name of the txt file, in the format of "./subfolder/datafile.txt"
 #'
 #' @importFrom readr read_tsv locale
-#'
 #' @export
 #' @return a dataframe
 #' @examples \dontrun{
@@ -77,7 +74,7 @@ ms_fileread <- function(filename) {
   # file contains the subfolder information from working directory
   # such as "./subfolder/datafile.txt"
   # The first . indicated the current working directory
-  outdir <- strsplit(filename,"/")[[1]][2]
+  outdir <- stringr::str_split(filename,"/")[[1]][2]
   data <- readr::read_tsv(file=filename)
   if (length(attr(data,"outdir"))==0 & length(outdir)>0 & !is.na(outdir)) {
     attr(data,"outdir") <- outdir

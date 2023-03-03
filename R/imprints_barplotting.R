@@ -30,9 +30,8 @@
 #' @param pdfwidth a number indicate the width of pdf file, default value 12
 #'
 #'
-#' @import tidyr
-#' @import dplyr
-#' @import RColorBrewer
+#' @importFrom tidyr expand gather separate unite
+#' @importFrom dplyr group_by mutate rowwise summarise ungroup
 #' @import ggplot2
 #'
 #' @export
@@ -60,7 +59,7 @@ imprints_barplotting <- function(data, treatmentlevel=NULL, setlevel=NULL, corrt
 
   nrowdata <- nrow(data)
   if ( nrowdata==0 ) {
-    print("Make sure there are more than one experimental condition in dataset.")
+    message("Make sure there are more than one experimental condition in dataset.")
     stop("Otherwise specify remsinglecondprot==FALSE !")
   }
 
@@ -69,7 +68,7 @@ imprints_barplotting <- function(data, treatmentlevel=NULL, setlevel=NULL, corrt
 
   data1 <- tidyr::gather(data[ ,!(names(data) %in% c("sumUniPeps","sumPSMs","countNum"))], condition, reading, -id)
   if (!log2scale) {
-    data1 <- mutate(data1, reading=2^reading)
+    data1 <- dplyr::mutate(data1, reading=2^reading)
   }
   a <- data1$condition[1]
   if (length(unlist(strsplit(a, "_")))==4) {
@@ -98,7 +97,7 @@ imprints_barplotting <- function(data, treatmentlevel=NULL, setlevel=NULL, corrt
     stop("make sure the namings of the columns of the dasaset are correct.")
   }
 
-  cdata <- cdata %>% rowwise() %>% mutate(condition=paste(temperature, treatment, sep="_"))
+  cdata <- cdata %>% dplyr::rowwise() %>% dplyr::mutate(condition=paste(temperature, treatment, sep="_"))
   if (withset) { cdata$set <- factor(as.character(cdata$set), levels=setlevel) }
   if (class(corrtable)!="NULL") {
     corrtable <- corrtable[order(corrtable$correlation,decreasing=T), ]
@@ -118,9 +117,9 @@ imprints_barplotting <- function(data, treatmentlevel=NULL, setlevel=NULL, corrt
   }
   cdata$treatment <- factor(as.character(cdata$treatment), levels=treatmentlevel)
   cdata$condition <- factor(as.character(cdata$condition),
-                            levels = apply(expand.grid(temperature,treatmentlevel), 1, paste, collapse="_"))
+                            levels=apply(expand.grid(temperature,treatmentlevel), 1, paste, collapse="_"))
 
-  print("Generating fitted plot file, pls wait.")
+  message("Generating fitted plot file, pls wait.")
   # return(cdata)
   # print(head(cdata))
 
@@ -145,13 +144,13 @@ imprints_barplotting <- function(data, treatmentlevel=NULL, setlevel=NULL, corrt
   class(pl) <- c("arrangelist", "ggplot", class(pl))
   pdfname <- gsub("/", " ", pdfname)
   if (length(outdir)) {
-    ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M_"), dataname, "_", pdfname),
+    ggplot2::ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M_"), dataname, "_", pdfname),
            pl, height=pdfheight, width=pdfwidth)
   } else {
-    ggsave(file=paste0(format(Sys.time(), "%y%m%d_%H%M_"), dataname, "_", pdfname), pl,
+    ggplot2::ggsave(file=paste0(format(Sys.time(), "%y%m%d_%H%M_"), dataname, "_", pdfname), pl,
            height=pdfheight, width=pdfwidth)
   }
 
   if (external) { external_graphs(F) } # switch off the external graphs
-  print("IMPRINTS-CETSA bar plot file generated successfully.")
+  message("IMPRINTS-CETSA bar plot file generated successfully.")
 }
