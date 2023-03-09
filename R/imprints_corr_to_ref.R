@@ -40,10 +40,12 @@ imprints_corr_to_ref <- function(data=NULL, set=NULL, treatment=NULL, reference=
   if (length(reference) == 0) {
     stop("Pls provide a numeric reading vector as the reference profile")
   }
+  
   if (inherits(data, "data.frame") | class(data) == "data.frame") {
     dataname <- deparse(substitute(data))
     outdir <- ms_directory(data, dataname)$outdir
     data <- ms_directory(data, dataname)$data
+    
     subset <- grep(paste0("_", treatment, "$"), names(data))
     if (length(set)) {
       subset_set <- grep(set, names(data))
@@ -56,9 +58,9 @@ imprints_corr_to_ref <- function(data=NULL, set=NULL, treatment=NULL, reference=
       stop("Pls provide the right set/treatment keyword character")
     }
   }
+  
   if (length(grep("countNum", names(data1)))) {
-    countinfo1 <- unique(data1[, stringr::str_which(names(data1),
-                                                    "^id$|^sumPSM|^countNum|^sumUniPeps")])
+    countinfo1 <- unique(data1[, stringr::str_which(names(data1), "^id$|^sumPSM|^countNum|^sumUniPeps")])
     data1 <- data1[, -stringr::str_which(names(data1), "^sumPSM|^countNum|^sumUniPeps")]
   }
   if (length(grep("description", names(data1)))) {
@@ -71,18 +73,16 @@ imprints_corr_to_ref <- function(data=NULL, set=NULL, treatment=NULL, reference=
   }
   na_thresh <- which(nb_na <= max_na)
   data1 <- data1[na_thresh, ]
+                 
   datal <- tidyr::gather(data1, treatment, reading, -id)
-  if (length(unlist(strsplit(datal$treatment[1], "_"))) ==
-      3) {
-    datal <- tidyr::separate(datal, treatment, into = c("set",
-                                                        "temperature", "condition"))
+  if (length(unlist(strsplit(datal$treatment[1], "_"))) == 3) {
+    datal <- tidyr::separate(datal, treatment, into = c("set", "temperature", "condition"))
     datal <- tidyr::unite(datal, "condition", c("set", "condition"))
   }
-  else if (length(unlist(strsplit(datal$treatment[1], "_"))) ==
-           2) {
-    datal <- tidyr::separate(datal, treatment, into = c("temperature",
-                                                        "condition"))
+  else if (length(unlist(strsplit(datal$treatment[1], "_"))) == 2) {
+    datal <- tidyr::separate(datal, treatment, into = c("temperature", "condition"))
   }
+                 
   treatment = unique(datal$condition)
   datal$condition <- NULL
   dataw <- tidyr::spread(datal, id, reading)
@@ -93,9 +93,9 @@ imprints_corr_to_ref <- function(data=NULL, set=NULL, treatment=NULL, reference=
   dataw <- apply(dataw, 2, as.numeric)
   rownames(dataw) <- rname
   dataw <- as.data.frame(dataw)
+                 
   if (use_score == "euclidean") {
-    dataw$distance <- apply(dataw, 1, function(x) dist(rbind(x,
-                                                             reference))[1])
+    dataw$distance <- apply(dataw, 1, function(x) dist(rbind(x, reference))[1])
     dataw$score <- 1/(1 + dataw$distance)
     dataw$id <- rownames(dataw)
     rownames(dataw) <- 1:nrow(dataw)
@@ -103,38 +103,43 @@ imprints_corr_to_ref <- function(data=NULL, set=NULL, treatment=NULL, reference=
     hist(cortable$score, breaks = 100, xlab = "", main = "Distribution of Euclidean distance score")
   }
   else if (use_score == "pearson") {
-    cortable <- cor(t(dataw[, 1:ncol(dataw)]), reference,
-                    use = "pairwise.complete.obs")
+    cortable <- cor(t(dataw[, 1:ncol(dataw)]), reference, use = "pairwise.complete.obs")
     cortable <- as.data.frame(cortable)
     colnames(cortable) <- "score"
     cortable <- tibble::rownames_to_column(cortable, var = "id")
     hist(cortable$score, breaks = 100, xlab = "", main = "Distribution of Pearson correlations")
   }
+                            
   if (score_threshold > 0) {
     if (include_neg) {
-      cortable <- subset(cortable, abs(score) >=
-                           score_threshold)
+      cortable <- subset(cortable, abs(score) >= score_threshold)
     }
     else {
       cortable <- subset(cortable, score >= score_threshold)
     }
   }
   if (nrow(cortable) == 0) {
-    g <- ggplot(data.frame(x = c(0, 1), y = c(0, 1)), aes(x,
-      y, label = "s")) + geom_text(x = 0.5, y = 0.5, label = paste0("No proteins pass the correlation score threshold of ",
-      score_threshold, "\n try to lower the threshold",
-      "\nor change the maximum number", "\nof missing values"),
-      size = 6) + cowplot::theme_cowplot() + theme(axis.text.x = element_blank(),
-      axis.title.x = element_blank(), axis.ticks.x = element_blank(),
-      axis.text.y = element_blank(), axis.title.y = element_blank(),
-       axis.ticks.y = element_blank())
+    g <- ggplot(data.frame(x = c(0, 1), y = c(0, 1)), aes(x,  y, label = "s")) +
+      geom_text(x = 0.5, y = 0.5, label = paste0("No proteins pass the correlation score threshold of ",
+                                                 score_threshold, "\n try to lower the threshold",
+                                                 "\nor change the maximum number", 
+                                                 "\nof missing values"), size = 6) + 
+      cowplot::theme_cowplot() + 
+      theme(axis.text.x = element_blank(),
+            axis.title.x = element_blank(),
+            axis.ticks.x = element_blank(),
+            axis.text.y = element_blank(), 
+            axis.title.y = element_blank(),
+            axis.ticks.y = element_blank())
+    
     return(g)
   }
   else {
     message(paste0(nrow(cortable), " proteins pass the correlation score threshold of ",
                    score_threshold))
   }
+                            
   cortable <- merge(proteininfo, cortable)
-  return(cortable[order(cortable$score, decreasing = TRUE),
-  ])
+                            
+  return(cortable[order(cortable$score, decreasing = TRUE), ])
 }
