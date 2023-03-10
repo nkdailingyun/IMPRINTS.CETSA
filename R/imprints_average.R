@@ -19,10 +19,11 @@ imprints_average <- function(data, savefile=TRUE) {
 
   if (savefile) {
     filename <- paste0(deparse(substitute(data)), "_average", ".txt")
+    dataname <- deparse(substitute(data))
+    outdir <- ms_directory(data, dataname)$outdir
+    data <- ms_directory(data, dataname)$data
   }
-  dataname <- deparse(substitute(data))
-  outdir <- ms_directory(data, dataname)$outdir
-  data <- ms_directory(data, dataname)$data
+  
 
   if (length(grep("description", names(data)))) {
     proteininfo <- unique(data[ ,c("id","description")])
@@ -59,11 +60,11 @@ imprints_average <- function(data, savefile=TRUE) {
   data <- merge(proteininfo, data)
 
   if (savefile) {
-    ms_filewrite(data, filename)
+    ms_filewrite(data, filename, outdir = outdir)
+    if (length(attr(data,"outdir"))==0 & length(outdir)>0) {
+      attr(data,"outdir") <- outdir
+    }
   }
 
-  if (length(attr(data,"outdir"))==0 & length(outdir)>0) {
-    attr(data,"outdir") <- outdir
-  }
   return(data)
 }
