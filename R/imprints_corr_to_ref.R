@@ -1,145 +1,150 @@
-#' imprints_corr_to_ref
+#' imprints_corr_in_complex
 #'
-#' Function to find out the proteins with most similar profile to the reference profile
+#' Function to calculate the profile correlation between the subunit proteins of
+#' the protein complexes found in IMPRINTS dataset
 #'
-#' @param data dataset of average IMPRINTS profile, that is after calculating the relative protein
-#' abundance differences and deriving the average, i.e., after imprints_average(), make sure
-#' the columns with readings are named in the format like "(Set_)37C_Treatment"
-#' @param set a single character to indicate the sample name
-#' @param treatment a single character to indicate the sample name
-#' @param reference a numeric vector with the profile readings
-#' @param use_score a single character element that define the method score. Method available : 'euclidean' or 'pearson'
-#' @param score_threshold a numeric value to indicate the correlation score threshold, default set to 0.9
-#' @param include_neg whether to include the negatively correlated proteins, default set to FALSE
-#' @param max_na an integer indicating the maximum number of missing value for one protein, default is 0
+#' @param data dataset after imprints_complex_mapping()
+#' @param nread number of reading channels or sample treatments, default value 6
+#' @param goodcorrcutoff the threshold for a good correlation, default value is 0.5
+#' @param vgoodcorrcutoff the threshold for a very good correlation, default value is 0.9
+#' @param removeredundancy scrutinize the complex input, to remove the redundancy
+#' according to the measured subunits, default set to FALSE
+#' @param similaritythreshold the threshold for similarity, numeric number between 0 to 1,
+#' default use 1.0 to only remove the complete overlap ones
+#' @param complexID a vector of complexID to retrieve from the data, if specified
+#' @param doplotting whether to generate the correlation plot, default set to TRUE
+#' @param layout a vector indicating the panel layout for multi-panel plots per page
 #'
 #'
-#' @importFrom tidyr expand gather separate unite
-#' @importFrom dplyr filter group_by left_join mutate rowwise summarise top_n ungroup
-#' @importFrom tibble rownames_to_column
+#' @importFrom plyr . ddply
+#' @importFrom ggplot2 ggsave
+#' @importFrom GGally ggcorr
 #' @export
-#' @return a dataframe with the correlation from the profile and the proteins which passed the threshold
+#' @return a dataframe
 #' @examples \dontrun{
-#' MOLM_M13_T1 <- imprints_corr_to_ref(MOLM, set="M13", treatment="T1",
-#'   reference=c(0.02792811,0.03133724,0.14457743,0.33304728,0.27218208,0.23847792))
+#'   MOLM <- imprints_corr_in_complex(MOLM, nread=6)
 #' }
 #'
 #'
 
-imprints_corr_to_ref <- function(data=NULL, set=NULL, treatment=NULL, reference=NULL,
-                                 use_score = c("euclidean", "pearson"),
-                                 score_threshold=0.9, include_neg=FALSE, max_na=0) {
+imprints_corr_in_complex <- function(data=NULL, nread=6, goodcorrcutoff=0.5, vgoodcorrcutoff=0.9,
+                                  removeredundancy=FALSE, similaritythreshold=1.0, complexID=NULL,
+                                  doplotting=TRUE, layout=c(3,2), external=TRUE, toplabel="") {
 
-  use_score <- match.arg(use_score)
-  if (!length(set) %in% c(0, 1)) {
-    stop("Pls provide one set name if any")
+  dataname <- deparse(substitute(data))
+  outdir <- ms_directory(data, dataname)$outdir
+  data <- ms_directory(data, dataname)$data
+
+  if (length(complexID)) {
+    if (class(complexID)=="character") { complexID <- as.numeric(complexID) }
+    data <- subset(data, ComplexID %in% complexID)
+    if (nrow(data)==0) { stop("Make sure the provided complexID is present in the input dataset") }
   }
-  if (length(treatment) != 1) {
-    stop("Pls provide one treatment name")
-  }
-  if (length(reference) == 0) {
-    stop("Pls provide a numeric reading vector as the reference profile")
-  }
-  
-  if (inherits(data, "data.frame") | class(data) == "data.frame") {
-    dataname <- deparse(substitute(data))
-    outdir <- ms_directory(data, dataname)$outdir
-    data <- ms_directory(data, dataname)$data
-    
-    subset <- grep(paste0("_", treatment, "$"), names(data))
-    if (length(set)) {
-      subset_set <- grep(set, names(data))
-      subset <- intersect(subset, subset_set)
+
+  if (removeredundancy) {
+    complexdata <- data %>% dplyr::group_by(ComplexID) %>%
+      dplyr::summarise(subunitsIdentified=paste(id,collapse=";")) %>%
+      dplyr::left_join(unique(data[ ,c("ComplexID","subunitsIdentifiedPerc")])) %>%
+      dplyr::arrange(-subunitsIdentifiedPerc)
+
+    i = 1
+    while (i<nrow(complexdata)) {
+      # l1 holds the members of query complex
+      l1 <- stringr::str_split(as.character(complexdata[i,2]),";")[[1]]
+      l <- c()
+      for (k in (i+1):nrow(complexdata)) {
+        # l2 holds the members of subject complex
+        l2 <- stringr::str_split(as.character(complexdata[k,2]),";")[[1]]
+        l <- c(l,sum(l1%in%l2)/min(length(l1),length(l2)))
+      }
+      if (length(which(l>=similaritythreshold))>0) {
+        rem=-1*(i+which(l>=similaritythreshold))
+        complexdata<-complexdata[rem, ]
+      }
+      #print(c(i,sum(l>=0.5),length(compdeffilt[,1])))
+      i=i+1
     }
-    if (length(subset) > 0 & length(subset) == length(reference)) {
-      data1 = data[, c(1, 2, subset)]
+    data <- subset(data, ComplexID %in% complexdata$ComplexID)
+    message(paste0("The number of multi-protein complexes after the removal of redundancy is: ",
+            length(unique(data$ComplexID))))
+  } else {
+    message(paste0("The number of multi-protein complexes to analyze is: ",
+                   length(unique(data$ComplexID))))
+  }
+
+  corr <- plyr::ddply(data, plyr::.(ComplexID), function(data) {
+    if (sum(duplicated(data$gene))>0) {
+      message("Found the following duplicated gene, need to be removed.")
+      stop(message(data[duplicated(data$gene), c("ComplexID","id","gene")]))
     }
-    else {
-      stop("Pls provide the right set/treatment keyword character")
-    }
+    name = unique(data[ ,2])
+    genepos <- grep("^gene", names(data))
+    data <- tidyr::gather(data[ ,c(genepos,7:(6+nread))], condition, reading, -gene)
+    data1 <- tidyr::spread(data, gene, reading)
+    correlation_table <- cor(data1[,-1], use="pairwise.complete.obs")
+    #correlation_table1[lower.tri(correlation_table1, diag=T)] <- NA
+    ut <- upper.tri(correlation_table)
+    correlation_table <- data.frame(
+      ComplexName = name,
+      row = rownames(correlation_table)[row(correlation_table)[ut]],
+      column = rownames(correlation_table)[col(correlation_table)[ut]],
+      correlation = (correlation_table)[ut]
+    )
+  } )
+  ms_filewrite(corr, paste0("correlation_in_", dataname, ".txt"),
+               outdir=outdir, withdescription=F)
+
+  corr_table <- corr %>% dplyr::group_by(ComplexID, ComplexName) %>%
+    dplyr::summarise(mediancorr=median(correlation,na.rm=T), numofcorr=n(),
+                  goodcorr=sum(correlation>goodcorrcutoff,na.rm=T),
+                  vgoodcorr=sum(correlation>vgoodcorrcutoff,na.rm=T),
+                  goodcorrperc=goodcorr/numofcorr, vgoodcorrperc=vgoodcorr/numofcorr) %>%
+    dplyr::arrange(-mediancorr*log(numofcorr))
+  ms_filewrite(corr_table, paste0("summarized_correlation_in_", dataname, ".txt"),
+               outdir=outdir, withdescription=F)
+
+  if (doplotting) {
+    data$ComplexID <- factor(data$ComplexID, levels=corr_table$ComplexID)
+    corr_plot <- plyr::dlply(data, plyr::.(ComplexID), function(data) {
+      genepos <- grep("^gene", names(data))
+      name = paste0("Complex ID: ", unique(data[,1]), "\n",
+                    unique(data[,2]),"\n",
+                    "Total subunit number: ", unique(data[,4]),"\n",
+                    "Identified subunit number: ", nrow(data))
+      data <- tidyr::gather(data[ ,c(genepos,7:(6+nread))], condition, reading, -gene)
+      data1 <- tidyr::spread(data, gene, reading)
+      q <- GGally::ggcorr(data1[,-1], palette="RdGy", size=3, label_round=2,
+                          label=T, label_color="white", label_size=3, hjust=0.5)
+      q <- q + ggtitle(name) +
+        theme(
+          text = element_text(size=8),
+          plot.title = element_text(hjust=0.5, size=rel(1))
+          #axis.text = element_text(angle=45, hjust=1, size=ref(0.7))
+        )
+    } )
+
+    if (external) { external_graphs(T) }
+
+    params <- list(nrow=layout[1], ncol=layout[2])
+    n <- with(params, nrow*ncol)
+    ## add one page if division is not complete
+    pages <- length(corr_plot) %/% n + as.logical(length(corr_plot) %% n)
+    groups <- split(seq_along(corr_plot), gl(pages, n, length(corr_plot)))
+
+    pl <- lapply(names(groups), function(i) {
+      gridExtra::grid.arrange(
+        do.call(gridExtra::arrangeGrob,
+                c(corr_plot[groups[[i]]], params, top=toplabel,left="",bottom="")))
+    })
+
+    class(pl) <- c("arrangelist", "ggplot", class(pl))
+    ggplot2::ggsave(file=paste0(outdir,"/",format(Sys.time(), "%y%m%d_%H%M"),"_",
+                                dataname,"_correlation_in_complex.pdf"), pl, height=11.69, width=8.27)
+
+    if (external) { external_graphs(F) } # switch off the external graphs
   }
-  
-  if (length(grep("countNum", names(data1)))) {
-    countinfo1 <- unique(data1[, stringr::str_which(names(data1), "^id$|^sumPSM|^countNum|^sumUniPeps")])
-    data1 <- data1[, -stringr::str_which(names(data1), "^sumPSM|^countNum|^sumUniPeps")]
+  if (length(attr(corr,"outdir"))==0 & length(outdir)>0) {
+    attr(corr,"outdir") <- outdir
   }
-  if (length(grep("description", names(data1)))) {
-    proteininfo <- unique(data1[, c("id", "description")])
-    data1$description <- NULL
-  }
-  nb_na <- apply(data1, 1, function(x) sum(is.na(x)))
-  if (max_na < 0) {
-    stop("Please enter an integer greater than or equal to 0 for the maximum NA per row")
-  }
-  na_thresh <- which(nb_na <= max_na)
-  data1 <- data1[na_thresh, ]
-                 
-  datal <- tidyr::gather(data1, treatment, reading, -id)
-  if (length(unlist(strsplit(datal$treatment[1], "_"))) == 3) {
-    datal <- tidyr::separate(datal, treatment, into = c("set", "temperature", "condition"))
-    datal <- tidyr::unite(datal, "condition", c("set", "condition"))
-  }
-  else if (length(unlist(strsplit(datal$treatment[1], "_"))) == 2) {
-    datal <- tidyr::separate(datal, treatment, into = c("temperature", "condition"))
-  }
-                 
-  treatment = unique(datal$condition)
-  datal$condition <- NULL
-  dataw <- tidyr::spread(datal, id, reading)
-  dataw <- t(dataw)
-  colnames(dataw) <- dataw[1, ]
-  dataw <- dataw[-1, ]
-  rname <- rownames(dataw)
-  dataw <- apply(dataw, 2, as.numeric)
-  rownames(dataw) <- rname
-  dataw <- as.data.frame(dataw)
-                 
-  if (use_score == "euclidean") {
-    dataw$distance <- apply(dataw, 1, function(x) dist(rbind(x, reference))[1])
-    dataw$score <- 1/(1 + dataw$distance)
-    dataw$id <- rownames(dataw)
-    rownames(dataw) <- 1:nrow(dataw)
-    cortable <- dataw[, c("id", "score")]
-    hist(cortable$score, breaks = 100, xlab = "", main = "Distribution of Euclidean distance score")
-  }
-  else if (use_score == "pearson") {
-    cortable <- cor(t(dataw[, 1:ncol(dataw)]), reference, use = "pairwise.complete.obs")
-    cortable <- as.data.frame(cortable)
-    colnames(cortable) <- "score"
-    cortable <- tibble::rownames_to_column(cortable, var = "id")
-    hist(cortable$score, breaks = 100, xlab = "", main = "Distribution of Pearson correlations")
-  }
-                            
-  if (score_threshold > 0) {
-    if (include_neg) {
-      cortable <- subset(cortable, abs(score) >= score_threshold)
-    }
-    else {
-      cortable <- subset(cortable, score >= score_threshold)
-    }
-  }
-  if (nrow(cortable) == 0) {
-    g <- ggplot(data.frame(x = c(0, 1), y = c(0, 1)), aes(x,  y, label = "s")) +
-      geom_text(x = 0.5, y = 0.5, label = paste0("No proteins pass the correlation score threshold of ",
-                                                 score_threshold, "\n try to lower the threshold",
-                                                 "\nor change the maximum number", 
-                                                 "\nof missing values"), size = 6) + 
-      cowplot::theme_cowplot() + 
-      theme(axis.text.x = element_blank(),
-            axis.title.x = element_blank(),
-            axis.ticks.x = element_blank(),
-            axis.text.y = element_blank(), 
-            axis.title.y = element_blank(),
-            axis.ticks.y = element_blank())
-    
-    return(g)
-  }
-  else {
-    message(paste0(nrow(cortable), " proteins pass the correlation score threshold of ",
-                   score_threshold))
-  }
-                            
-  cortable <- merge(proteininfo, cortable)
-                            
-  return(cortable[order(cortable$score, decreasing = TRUE), ])
+  return(corr)
 }
