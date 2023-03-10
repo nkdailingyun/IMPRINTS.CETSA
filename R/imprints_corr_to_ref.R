@@ -30,6 +30,7 @@ imprints_corr_to_ref <- function(data=NULL, set=NULL, treatment=NULL, reference=
                                  use_score = c("euclidean", "pearson"),
                                  score_threshold=0.9, include_neg=FALSE, max_na=0) {
 
+  use_score <- match.arg(use_score)
   if (!length(set) %in% c(0,1)) {stop("Pls provide one set name if any")}
   if (length(treatment) != 1) {stop("Pls provide one treatment name")}
   if (length(reference) == 0) {stop("Pls provide a numeric reading vector as the reference profile")}
@@ -39,10 +40,10 @@ imprints_corr_to_ref <- function(data=NULL, set=NULL, treatment=NULL, reference=
     outdir <- ms_directory(data, dataname)$outdir
     data <- ms_directory(data, dataname)$data
 
-    subset <- grep(treatment,names(data))
+    subset <- grep(paste0("_", treatment, "$"), names(data))
     if (length(set)) {
-      subset_set <- grep(set,names(data))
-      subset <- intersect(subset,subset_set)
+      subset_set <- grep(set, names(data))
+      subset <- intersect(subset, subset_set)
     }
     if (length(subset)>0 & length(subset)==length(reference)) {
       data1 = data[ ,c(1,2,subset)]
@@ -105,20 +106,21 @@ imprints_corr_to_ref <- function(data=NULL, set=NULL, treatment=NULL, reference=
     hist(cortable$score, breaks=100, xlab="", main="Distribution of Pearson correlations")
   }
 
-  if (score_threshold>0) {
+  if (score_threshold > 0) {
     if (include_neg) {
-      cortable <- subset(cortable, abs(correlation)>=score_threshold)
+      cortable <- subset(cortable, abs(score)>=score_threshold)
     } else {
-      cortable <- subset(cortable, correlation>=score_threshold)
+      cortable <- subset(cortable, score>=score_threshold)
     }
   }
-  if (nrow(cortable)==0) {
-    # stop(paste0("No proteins pass the correlation threshold of ", score_threshold, "\n try to lower the threshold..."))
-    g <- ggplot(data.frame(x = c(0,1), y = c(0,1)), aes(x,y, label = "s")) +
-      geom_text(x=0.5, y=0.5, label = paste0("No proteins pass the correlation score threshold of ",
-                                             score_threshold, "\n try to lower the threshold",
-                                             "\nor change the maximum number",
-                                             "\nof missing values"), size = 6) +
+  if (nrow(cortable) == 0) {
+    # stop(paste0("No proteins pass the correlation threshold of ",
+    # score_threshold, "\n try to lower the threshold..."))
+    g <- ggplot(data.frame(x = c(0,1), y = c(0,1)), aes(x, y, label = "s")) +
+      geom_text(x = 0.5, y = 0.5, label = paste0("No proteins pass the correlation score threshold of ",
+                                                score_threshold, "\n try to lower the threshold",
+                                                "\nor change the maximum number",
+                                                "\nof missing values"), size = 6) +
       cowplot::theme_cowplot() +
       theme(axis.text.x = element_blank(),
             axis.title.x = element_blank(),
@@ -131,15 +133,7 @@ imprints_corr_to_ref <- function(data=NULL, set=NULL, treatment=NULL, reference=
   } else {
     message(paste0(nrow(cortable), " proteins pass the correlation score threshold of ", score_threshold))
   }
-  # cortable <- group_by(dataw,gene) %>%
-  #   summarize(correlation=cor(eval(parse(text=treatment[1])),eval(parse(text=treatment[2])), use="complete.obs"))
-  # dataw <- spread(datal, temperature, reading)
-  # dism <- plyr::ddply(dataw, "gene", function(data) {
-  #   data<-data[order(data$condition), ]
-  #   dm<-as.matrix(dist(data[ ,-c(1:2)]))[1,2]
-  # })
-  # names(dism)[2] <- "distance"
-  cortable <- merge(proteininfo,cortable)
-  # cortable <- merge(cortable,dism)
-  return(cortable[order(cortable$score,decreasing=TRUE), ])
+
+  cortable <- merge(proteininfo, cortable)
+  return(cortable[order(cortable$score, decreasing=TRUE), ])
 }
