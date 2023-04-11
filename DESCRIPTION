@@ -1,16 +1,16 @@
 Package: IMPRINTS.CETSA
 Title: Process and Visualize Proteome-wide IMPRINTS-CETSA data
 Version: 1.0.0
-Authors@R: 
+Authors@R:
     c(person("Lingyun", "Dai", email = "nkdailingyun@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-9386-5967")),
     person("Marc-Antoine", "Gerault", email = "marco.gerault@gmail.com", role = c("ctb")))
-Description: This package is designed to process and visualize IMRPINTS-CETSA 
+Description: This package is designed to process and visualize IMRPINTS-CETSA
     results from TMT labelling and quantification scheme.
 License: MIT + file LICENSE
-Depends: 
+Depends:
     R (>= 4.0.0)
-Imports: 
+Imports:
     dplyr (>= 1.0.0),
     drc (>= 3.0),
     fdrtool,
@@ -33,14 +33,13 @@ Imports:
     tibble (>= 3.0.0),
     tidyr (>= 1.2.0),
     VennDiagram,
+    cowplot,
     VIM,
     XML
-Suggests: 
+Suggests:
     arrayQualityMetrics,
-    cowplot,
-    Biobase,
-    knitr,
     limma,
+    knitr,
     rmarkdown,
     roxygen2
 Encoding: UTF-8
