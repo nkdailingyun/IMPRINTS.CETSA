@@ -19,40 +19,28 @@ The main tasks can be accompolished in this package include:
 
 --------------------------------------------------------------------------------------------
 
-## Prerequisites of installing IMPRINTS.CETSA package
-* R version >= 4.0.0, preferably the most updated version
-* Rstudio version > 1.0, preferably the most updated version
-* Imported packages:  
-    arrayQualityMetrics,
-    Biobase,
-    dplyr (>= 1.0.0),
-    drc (>= 3.0),
-    fdrtool,
-    GGally,
-    ggplot2 (>= 3.2.0),
-    ggpubr,
-    ggrepel (>= 0.8.0),
-    graphics,
-    grDevices,
-    grid,
-    gridExtra,
-    gridSVG,
-    gtools,
-    limma,
-    MESS,
-    methods,
-    mice,
-    Nozzle.R1,
-    plyr (>= 1.8.0),
-    RColorBrewer,
-    readr (>= 2.0.0),
-    reshape2 (>= 1.4.0),
-    scales,
-    stats,
-    tibble (>= 3.0.0),
-    tidyr (>= 1.2.0),
-    utils,
-    VennDiagram,
-    VIM,
-    XML
-During the package installation process from local source, when these dependent packages are not available, complains would rise, use `install.packges()` or `BiocManager::install()` command to manually install the required supporting packages (as specified in the warning message), till there is no more complain.  
+## How to install IMPRINTS.CETSA ?  
+First go to Rstudio and check that you have R >= 4.0
+Moreover, you'll need to install two packages from Bioconductor with this commands:
+
+```c
+if(!requireNamespace("BiocManager", quietly = TRUE)){
+   install.packages("BiocManager") 
+}
+BiocManager::install(c("limma", "arrayQualityMetrics"))
+```
+
+When all of this is done, type and run the following commands in R console:
+
+```c
+if(!requireNamespace("devtools", quietly = TRUE)){
+   install.packages("devtools")
+} 
+devtools::install_github("nkdailingyun/IMPRINTS.CETSA")
+```
+
+IMPRINTS.CETSA is now installed and you can load it with:
+
+```
+library(IMPRINTS.CETSA)
+```
