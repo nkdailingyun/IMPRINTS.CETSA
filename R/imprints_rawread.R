@@ -8,9 +8,6 @@
 #' in a typical IMPRINTS/2D working scheme, the treatment name should contain both replicate and treatment
 #' information, preferably concatenated with an underline
 #' @param nread number of reading channels, should match the number of channels used, default value 10
-#' @param abdread whether to read in protein abundance data, default set to TRUE
-#' @param noratiodata whether to remove the protein ratio data, default set to TRUE
-#' @param PDversion which version of Proteome Discoverer the data is searched, possible values 20,21,22,24
 #' @param fdrcontrol whether to check the protein FDR confidence level, default set to FALSE
 #' @param refchannel names of reference channel used in Proteome Discoverer search, default value 126
 #' @param channels names of the read-in channels, default value NULL, it would automatically
@@ -27,73 +24,91 @@
 #' }
 #'
 #'
-#'
-imprints_rawread <- function(filevector, fchoose=FALSE, treatment=NULL, nread=10,
-                          abdread=TRUE, noratiodata=TRUE, PDversion=21, fdrcontrol=FALSE,
-                          refchannel="126", channels=NULL) {
-
-  if (nread==10 & length(channels)==0) {
-    channels=c("126","127N","127C","128N","128C","129N","129C","130N","130C","131")
-  } else if (nread==11 & length(channels)==0) {
-    channels=c("126","127N","127C","128N","128C","129N","129C","130N","130C","131N","131C")
-  } else if (nread==16 & length(channels)==0) {
-    channels=c("126","127N","127C","128N","128C","129N","129C","130N","130C","131N","131C","132N","132C","133N","133C","134N")
-  } else if (nread!=length(channels) | nread!=length(treatment)) {
+imprints_rawread <- function (filevector, fchoose = FALSE,
+                              treatment = NULL, nread = 10,
+                              fdrcontrol = FALSE,
+                              refchannel = "126", channels = NULL){
+  if (nread == 10 & length(channels) == 0) {
+    channels = c("126", "127N", "127C", "128N", "128C",
+                 "129N", "129C", "130N", "130C", "131")
+  }
+  else if (nread == 11 & length(channels) == 0) {
+    channels = c("126", "127N", "127C", "128N", "128C",
+                 "129N", "129C", "130N", "130C", "131N", "131C")
+  }
+  else if (nread == 16 & length(channels) == 0) {
+    channels = c("126", "127N", "127C", "128N", "128C",
+                 "129N", "129C", "130N", "130C", "131N", "131C",
+                 "132N", "132C", "133N", "133C", "134N")
+  }
+  else if (nread == 18 & length(channels) == 0) {
+    channels = c("126", "127N", "127C", "128N", "128C", "129N",
+                 "129C", "130N", "130C", "131N", "131C", "132N",
+                 "132C", "133N", "133C", "134N", "134C", "135N")
+  }
+  else if (nread != length(channels) | nread != length(treatment)) {
     stop("Please provide a vector of used TMT channels")
   }
 
-  if (length(treatment)==0) {
+  if (length(treatment) == 0) {
     stop("Need to specify the treatment conditions in the same order as the TMT channel arrangement")
   }
-  if (length(treatment)!=nread | length(treatment)!=length(channels)) {
+  if (length(treatment) != nread | length(treatment) != length(channels)) {
     stop("The number of elements in treatment condition vector should be equal to the number of read-in channels")
   }
-  if (length(filevector)==0) {
+  if (length(filevector) == 0) {
     stop("Need to specify the input data file names")
   }
-  flength <- length(filevector)
 
+  flength <- length(filevector)
   if (flength < 2) {
     dirname <- deparse(substitute(filevector))
-    dirname_l <- unlist(strsplit(dirname, split="/"))
+    dirname_l <- unlist(strsplit(dirname, split = "/"))
     dirname <- dirname_l[length(dirname_l)]
-    data <- ms_innerread(filevector, fchoose, treatment, nread, abdread, PDversion, fdrcontrol, refchannel, channels)
+    data <- ms_innerread(filevector, fchoose, treatment,
+                         nread, fdrcontrol, refchannel,
+                         channels)
+
     data <- ms_dircreate(dirname, data)
-    outdir <- attr(data,"outdir")
-    if (noratiodata) {
-      data <- data[ ,-c(4:(nread+3))]
-      names(data) <- gsub("Abundance_", "", names(data))
+    outdir <- attr(data, "outdir")
+    if (length(attr(data, "outdir")) == 0 & length(outdir) > 0) {
+      attr(data, "outdir") <- outdir
     }
-    if (length(attr(data,"outdir"))==0 & length(outdir)>0) {
-      attr(data,"outdir") <- outdir
-    }
+
     message("The data composition under each experimental condition (read in) is:")
     print(table(data$condition))
     return(data)
-  } else {
+  }
+  else {
     filename <- filevector[1]
     dirname <- deparse(substitute(filename))
-    dirname_l <- unlist(strsplit(dirname, split="/"))
+    dirname_l <- unlist(strsplit(dirname, split = "/"))
     dirname <- dirname_l[length(dirname_l)]
-    indata <- ms_innerread(filevector[1], fchoose, treatment, nread, abdread, PDversion, fdrcontrol, refchannel, channels)
-    indata <- dplyr::mutate(indata, condition = paste0(condition,".1"))
+    indata <- ms_innerread(filevector[1], fchoose, treatment,
+                           nread, fdrcontrol, refchannel,
+                           channels)
+    indata$condition <- paste0(condition, ".1")
     outdata <- indata
+
     for (i in 2:flength) {
-      indata <- ms_innerread(filevector[i], fchoose, treatment, nread, abdread, PDversion, fdrcontrol, refchannel, channels)
-      indata <- dplyr::mutate(indata, condition = paste0(condition, ".", i))
-      outdata <- rbind(x=outdata, y=indata, by=NULL)
+      indata <- ms_innerread(filevector[i], fchoose, treatment,
+                             nread, fdrcontrol, refchannel,
+                             channels)
+      indata$condition <- paste0(condition, ".", i)
+      outdata <- rbind(x = outdata, y = indata)
     }
-    outdata <- ms_dircreate(paste0("merged_",dirname), outdata)
-    outdir <- attr(outdata,"outdir")
-    if (noratiodata) {
-      outdata <- outdata[ ,-c(4:(nread+3))]
-      names(outdata) <- gsub("Abundance_", "", names(outdata))
+
+    outdata <- ms_dircreate(paste0("merged_", dirname), outdata)
+    outdir <- attr(outdata, "outdir")
+    if (length(attr(outdata, "outdir")) == 0 & length(outdir) > 0){
+      attr(outdata, "outdir") <- outdir
     }
-    if (length(attr(outdata,"outdir"))==0 & length(outdir)>0) {
-      attr(outdata,"outdir") <- outdir
-    }
+
     message("The data composition under each experimental condition (read in) is:")
     print(table(outdata$condition))
+    rownames(outdata) <- NULL
+
     return(outdata)
   }
 }
+

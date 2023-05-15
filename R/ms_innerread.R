@@ -6,26 +6,19 @@
 #' @param fchoose whether to choose file interactively
 #' @param treatment names of treatments (temperature, dose, time) applied to samples
 #' @param nread number of reading channels, should match the number of channels used
-#' @param abdread whether to read in protein abundance data
-#' @param PDversion which version of Proteome Discoverer the data is searched, possible values 20,21,22,24
 #' @param fdrcontrol whether to check the protein FDR confidence level
 #' @param refchannel names of reference channel used in Proteome Discoverer search, such as 126
 #' @param channels names of the read-in channels
-#' @param ... other arguments ignored (for compatibility with generic)
 #'
 #' @keywords internal
 #'
 #' @importFrom readr read_tsv locale spec date_names date_names_lang
 #'
 #' @return a dataframe
-#' @examples \dontrun{
-#'  ms_innerread("file.txt")
-#' }
-#'
 #'
 #'
 ms_innerread <- function (file, fchoose, treatment, nread,
-               fdrcontrol, refchannel, channels){
+                          fdrcontrol, refchannel, channels){
   if (length(treatment) != nread | length(channels) != nread) {
     stop("Make sure you specify the right number of channels!")
   }
@@ -104,6 +97,11 @@ ms_innerread <- function (file, fchoose, treatment, nread,
   }
 
   data$condition <- conditions
+  # be sure that channels are in same order as treatment
+  ord_channel <- sapply(channels,
+                        function(y) grep(paste0(" ", y, ","), colnames(data)))
+  data <- data[,c(1:2, ord_channel, (ncol(data)-3):ncol(data))]
+  # rename columns
   colnames(data) <- c("id", "description",
                       treatment, "sumUnipeps",
                       "sumPSMs", "countNum", "condition")
@@ -112,3 +110,4 @@ ms_innerread <- function (file, fchoose, treatment, nread,
 
   return(data)
 }
+
