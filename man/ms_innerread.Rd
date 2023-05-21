@@ -4,17 +4,7 @@
 \alias{ms_innerread}
 \title{ms_innerread}
 \usage{
-ms_innerread(
-  file,
-  fchoose,
-  treatment,
-  nread,
-  abdread,
-  PDversion,
-  fdrcontrol,
-  refchannel,
-  channels
-)
+ms_innerread(file, fchoose, treatment, nread, fdrcontrol, refchannel, channels)
 }
 \arguments{
 \item{file}{file name to import}
@@ -25,30 +15,16 @@ ms_innerread(
 
 \item{nread}{number of reading channels, should match the number of channels used}
 
-\item{abdread}{whether to read in protein abundance data}
-
-\item{PDversion}{which version of Proteome Discoverer the data is searched, possible values 20,21,22,24}
-
 \item{fdrcontrol}{whether to check the protein FDR confidence level}
 
 \item{refchannel}{names of reference channel used in Proteome Discoverer search, such as 126}
 
 \item{channels}{names of the read-in channels}
-
-\item{...}{other arguments ignored (for compatibility with generic)}
 }
 \value{
 a dataframe
 }
 \description{
 Internal function to parse and read in data from tab delimited files exported from Proteome Discoverer
-}
-\examples{
-\dontrun{
- ms_innerread("file.txt")
-}
-
-
-
 }
 \keyword{internal}

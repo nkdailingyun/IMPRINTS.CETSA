@@ -9,9 +9,6 @@ imprints_rawread(
   fchoose = FALSE,
   treatment = NULL,
   nread = 10,
-  abdread = TRUE,
-  noratiodata = TRUE,
-  PDversion = 21,
   fdrcontrol = FALSE,
   refchannel = "126",
   channels = NULL
@@ -28,18 +25,12 @@ information, preferably concatenated with an underline}
 
 \item{nread}{number of reading channels, should match the number of channels used, default value 10}
 
-\item{abdread}{whether to read in protein abundance data, default set to TRUE}
-
-\item{noratiodata}{whether to remove the protein ratio data, default set to TRUE}
-
-\item{PDversion}{which version of Proteome Discoverer the data is searched, possible values 20,21,22,24}
-
 \item{fdrcontrol}{whether to check the protein FDR confidence level, default set to FALSE}
 
 \item{refchannel}{names of reference channel used in Proteome Discoverer search, default value 126}
 
 \item{channels}{names of the read-in channels, default value NULL, it would automatically
-match the provided channel number when it is 10 or 11}
+match the provided channel number when it is 10, 11, 16 or 18}
 }
 \value{
 a dataframe
