@@ -18,7 +18,7 @@ imprints_rearrange(
 \arguments{
 \item{data}{dataset to transform into a wide format}
 
-\item{nread}{number of reading channels, default value 9 in 2D-CETSA scheme}
+\item{nread}{number of reading channels, default value 9 in typical IMPRINTS-CETSA scheme}
 
 \item{repthreshold}{the minimal percentage threshold of protein being sampled
 from multiple runs, default value is 0.75}
@@ -29,8 +29,9 @@ reference channel, usually 37C or the lowest heating temperature (basetemp)}
 \item{basetemp}{the character indicating the baseline temperature for
 expression levels, default value is 37C}
 
-\item{averagecount}{whether to take the median average the supporting PSM/
-peptide/count numbers, default set to TRUE}
+\item{averagecount}{whether to take the median of the abundance count numbers across
+the measured temperature range and then use this value for filtering, default set to TRUE,
+otherwise, filter the proteins according to the associated count numbers at each temperature}
 
 \item{countthreshold}{the minimal threshold number of associated abundance
 count of proteins, default value is 2}
