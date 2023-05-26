@@ -11,7 +11,7 @@
 #' @param fdrcontrol whether to check the protein FDR confidence level, default set to FALSE
 #' @param refchannel names of reference channel used in Proteome Discoverer search, default value 126
 #' @param channels names of the read-in channels, default value NULL, it would automatically
-#' match the provided channel number when it is 10, 11, 16 or 18
+#' match the provided channel number when it is 10 or 11
 #'
 #'
 #' @importFrom dplyr filter group_by left_join mutate rowwise summarise top_n ungroup
@@ -24,68 +24,115 @@
 #' }
 #'
 #'
-#'
-imprints_rawread <- function(filevector, fchoose=FALSE, treatment=NULL, nread=10,
-                             fdrcontrol=FALSE, refchannel="126", channels=NULL) {
-
-  if (nread==10 & length(channels)==0) {
-    channels=c("126","127N","127C","128N","128C","129N","129C","130N","130C","131")
-  } else if (nread==11 & length(channels)==0) {
-    channels=c("126","127N","127C","128N","128C","129N","129C","130N","130C","131N","131C")
-  } else if (nread==16 & length(channels)==0) {
-    channels=c("126","127N","127C","128N","128C","129N","129C","130N","130C","131N","131C",
-               "132N","132C","133N","133C","134N")
-  } else if (nread==18 & length(channels)==0) {
-    channels=c("126","127N","127C","128N","128C","129N","129C","130N","130C","131N","131C",
-               "132N","132C","133N","133C","134N","134C","135N")
-  } else if (nread!=length(channels) | nread!=length(treatment)) {
+imprints_rawread <- function (filevector, fchoose = FALSE,
+                              treatment = NULL, nread = 10,
+                              fdrcontrol = FALSE,
+                              refchannel = "126", channels = NULL){
+  if (nread == 10 & length(channels) == 0) {
+    channels = c("126", "127N", "127C", "128N", "128C",
+                 "129N", "129C", "130N", "130C", "131")
+  }
+  else if (nread == 11 & length(channels) == 0) {
+    channels = c("126", "127N", "127C", "128N", "128C",
+                 "129N", "129C", "130N", "130C", "131N", "131C")
+  }
+  else if (nread == 16 & length(channels) == 0) {
+    channels = c("126", "127N", "127C", "128N", "128C",
+                 "129N", "129C", "130N", "130C", "131N", "131C",
+                 "132N", "132C", "133N", "133C", "134N")
+  }
+  else if (nread == 18 & length(channels) == 0) {
+    channels = c("126", "127N", "127C", "128N", "128C", "129N",
+                 "129C", "130N", "130C", "131N", "131C", "132N",
+                 "132C", "133N", "133C", "134N", "134C", "135N")
+  }
+  else if (nread != length(channels) | nread != length(treatment)) {
     stop("Please provide a vector of used TMT channels")
   }
 
-  if (length(treatment)==0) {
+  if (length(treatment) == 0) {
     stop("Need to specify the treatment conditions in the same order as the TMT channel arrangement")
   }
-  if (length(treatment)!=nread | length(treatment)!=length(channels)) {
+  if (length(treatment) != nread | length(treatment) != length(channels)) {
     stop("The number of elements in treatment condition vector should be equal to the number of read-in channels")
   }
-  if (length(filevector)==0) {
+  if (length(filevector) == 0) {
     stop("Need to specify the input data file names")
   }
-  flength <- length(filevector)
 
+  flength <- length(filevector)
   if (flength < 2) {
     dirname <- deparse(substitute(filevector))
-    dirname_l <- unlist(strsplit(dirname, split="/"))
+    dirname_l <- unlist(strsplit(dirname, split = "/"))
     dirname <- dirname_l[length(dirname_l)]
-    data <- ms_innerread(filevector, fchoose, treatment, nread,
-                         fdrcontrol, refchannel, channels)
-    data <- ms_dircreate(dirname, data)
-    outdir <- attr(data,"outdir")
-    if (length(attr(data,"outdir"))==0 & length(outdir)>0) {
-      attr(data,"outdir") <- outdir
+    data <- ms_innerread(filevector, fchoose, treatment,
+                         nread, fdrcontrol, refchannel,
+                         channels)
+
+    # remove contaminants
+    cont <- grep("^Cont_", data$id)
+    ncont <- length(cont)
+    if(length(cont)){
+      data <- data[-cont,]
     }
+    cont <- grep("Bos taurus", data$description)
+    ncont <- length(cont) + ncont
+    if(length(cont)){
+      data <- data[-cont,]
+    }
+    if(ncont > 0){
+      message(paste(ncont, "contaminants have been removed"))
+    }
+
+    data <- ms_dircreate(dirname, data)
+    outdir <- attr(data, "outdir")
+    if (length(attr(data, "outdir")) == 0 & length(outdir) > 0) {
+      attr(data, "outdir") <- outdir
+    }
+
     message("The data composition under each experimental condition (read in) is:")
     print(table(data$condition))
     return(data)
-  } else {
+  }
+  else {
     filename <- filevector[1]
     dirname <- deparse(substitute(filename))
-    dirname_l <- unlist(strsplit(dirname, split="/"))
+    dirname_l <- unlist(strsplit(dirname, split = "/"))
     dirname <- dirname_l[length(dirname_l)]
-    indata <- ms_innerread(filevector[1], fchoose, treatment, nread,
-                           fdrcontrol, refchannel, channels)
-    indata <- dplyr::mutate(indata, condition = paste0(condition,".1"))
+    indata <- ms_innerread(filevector[1], fchoose, treatment,
+                           nread, fdrcontrol, refchannel,
+                           channels)
+    indata$condition <- paste0(indata$condition, ".1")
     outdata <- indata
+
     for (i in 2:flength) {
-      indata <- ms_innerread(filevector[i], fchoose, treatment, nread,
-                             fdrcontrol, refchannel, channels)
-      indata <- dplyr::mutate(indata, condition = paste0(condition, ".", i))
-      outdata <- rbind(x=outdata, y=indata)
+      indata <- ms_innerread(filevector[i], fchoose, treatment,
+                             nread, fdrcontrol, refchannel,
+                             channels)
+      indata$condition <- paste0(indata$condition, ".", i)
+      outdata <- rbind(x = outdata, y = indata)
     }
-    outdata <- ms_dircreate(paste0("merged_",dirname), outdata)
-    outdir <- attr(outdata,"outdir")
-    if (length(attr(outdata,"outdir"))==0 & length(outdir)>0) {
-      attr(outdata,"outdir") <- outdir
+
+    # remove contaminants
+    cont <- grep("^Cont_", outdata$id)
+    ncont <- length(cont)
+    if(length(cont)){
+      outdata <- outdata[-cont,]
+    }
+    cont <- grep("Bos taurus", outdata$description)
+    ncont <- length(cont) + ncont
+    if(length(cont)){
+      outdata <- outdata[-cont,]
+    }
+    if(ncont > 0){
+      ncont <- as.integer(ncont/flength)
+      message(paste(ncont, "contaminants have been removed"))
+    }
+
+    outdata <- ms_dircreate(paste0("merged_", dirname), outdata)
+    outdir <- attr(outdata, "outdir")
+    if (length(attr(outdata, "outdir")) == 0 & length(outdir) > 0){
+      attr(outdata, "outdir") <- outdir
     }
 
     message("The data composition under each experimental condition (read in) is:")
@@ -95,3 +142,4 @@ imprints_rawread <- function(filevector, fchoose=FALSE, treatment=NULL, nread=10
     return(outdata)
   }
 }
+
