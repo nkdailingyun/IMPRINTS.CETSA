@@ -41,7 +41,7 @@ ms_innerread <- function(file, fchoose, treatment, nread,
   names(data) <- gsub(pattern="\\)", "", names(data))
 
   # create condition vector
-  conditions <- grep(pattern = "^Abundances: ", colnames(data), value = TRUE)
+  conditions <- grep(pattern = "^Abundance[: |s: ]", colnames(data), value = TRUE)
   if (length(conditions)==0) {
     conditions <- grep(pattern = "^Abundances Grouped: ", colnames(data), value = TRUE)
   }
@@ -108,7 +108,7 @@ ms_innerread <- function(file, fchoose, treatment, nread,
   }
 
   data$condition <- conditions
-  colnames(data)[c((ncol(data)-3):(ncol(data)-1))] <- c("sumUnipeps", "sumPSMs", "countNum")
+  colnames(data)[c((ncol(data)-3):(ncol(data)-1))] <- c("sumUniPeps", "sumPSMs", "countNum")
   # be sure that channels are in same order as treatment vector
   ord_channel <- sapply(channels,
                         function(y) grep(paste0(" ", y, ","), colnames(data)))
