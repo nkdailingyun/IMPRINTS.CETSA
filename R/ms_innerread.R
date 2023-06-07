@@ -114,7 +114,7 @@ ms_innerread <- function(file, fchoose, treatment, nread,
                         function(y) grep(paste0(" ", y, ","), colnames(data)))
   data <- data[,c(1:2, ord_channel, (ncol(data)-3):ncol(data))]
   # rename columns
-  colnames(data) <- c("id", "description", treatment, "sumUnipeps",
+  colnames(data) <- c("id", "description", treatment, "sumUniPeps",
                       "sumPSMs", "countNum", "condition")
   data <- data[,c(1:2, ncol(data), 3:(ncol(data)-1))]
 
