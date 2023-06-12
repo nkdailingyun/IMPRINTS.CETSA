@@ -21,8 +21,8 @@
 #'
 #'
 
-ms_clean <- function(data, nread=10, remkeratin=TRUE, remserum=TRUE,
-                     remtrypsin=TRUE, remsinglecondprot=FALSE) {
+ms_clean <- function(data, nread=10, remcontaminant=TRUE, remkeratin=TRUE,
+                     remserum=TRUE, remtrypsin=TRUE, remsinglecondprot=FALSE) {
 
   # add variable name to output
   dataname <- deparse(substitute(data))
@@ -48,6 +48,26 @@ ms_clean <- function(data, nread=10, remkeratin=TRUE, remserum=TRUE,
       stop("Single conditioned dataset cannot set remsinglecondprot to TRUE!")
     }
   }
+
+  # remove contaminants
+  if (remcontaminant) {
+    pattern <- grep("^Cont_", data$id)
+    # print(length(pattern))
+    if (length(pattern) > 0) {
+      data <- data[-pattern, ]
+    }
+    if (nrow(data) == 0) {
+      stop("After removing Contaminant proteins, the dataset is empty.")
+    }
+    pattern <- grep("Bos taurus", data$description)
+    # print(length(pattern))
+    if (length(pattern) > 0) {
+      data <- data[-pattern, ]
+    }
+    if (nrow(data) == 0) {
+      stop("After removing Bos taurus proteins, the dataset is empty.")
+    }
+  }
   # to remove contaminating keratin proteins
   if (remkeratin) {
     pattern <- grep("Keratin", data$description)
@@ -56,10 +76,10 @@ ms_clean <- function(data, nread=10, remkeratin=TRUE, remserum=TRUE,
       data <- data[-pattern, ]
     }
     if (nrow(data) == 0) {
-      stop("After removing Keratin the dataset is empty.")
+      stop("After removing Keratin protein, the dataset is empty.")
     }
   }
-  # to remove contaminating keratin proteins
+  # to remove contaminating serum albumin proteins
   if (remserum) {
     pattern <- grep("Serum albumin", data$description)
     # print(length(pattern))
@@ -67,7 +87,7 @@ ms_clean <- function(data, nread=10, remkeratin=TRUE, remserum=TRUE,
       data <- data[-pattern, ]
     }
     if (nrow(data) == 0) {
-      stop("After removing Serum albumin the dataset is empty.")
+      stop("After removing Serum albumin proteins, the dataset is empty.")
     }
   }
   # to remove Trypsin proteins even from Human species
@@ -78,7 +98,7 @@ ms_clean <- function(data, nread=10, remkeratin=TRUE, remserum=TRUE,
       data <- data[-pattern, ]
     }
     if (nrow(data) == 0) {
-      stop("After removing Trypsin the dataset is empty.")
+      stop("After removing Trypsin proteins, the dataset is empty.")
     }
   }
   message(paste("The data composition under each experimental condition (after cleanup) is:"))

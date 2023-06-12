@@ -41,7 +41,7 @@ ms_innerread <- function(file, fchoose, treatment, nread,
   names(data) <- gsub(pattern="\\)", "", names(data))
 
   # create condition vector
-  conditions <- grep(pattern = "^Abundances: ", colnames(data), value = TRUE)
+  conditions <- grep(pattern = "^Abundance: |^Abundances: ", colnames(data), value = TRUE)
   if (length(conditions)==0) {
     conditions <- grep(pattern = "^Abundances Grouped: ", colnames(data), value = TRUE)
   }
@@ -94,7 +94,7 @@ ms_innerread <- function(file, fchoose, treatment, nread,
   sumPSMs <-  grep(pattern = "^# PSMs$", colnames)
   countNum <- grep(pattern = paste0("^Abundances Count: [A-z0-9,. -]+",": ",
                                     refchannel, "[A-z0-9,. -]+$"), colnames)
-  raw_abundance <- grep(pattern = "^Abundances: ", colnames)
+  raw_abundance <- grep(pattern = "^Abundance: |^Abundances: ", colnames)
   if (length(raw_abundance)==0) {
     raw_abundance <- grep(pattern = "^Abundances Grouped: ", colnames)
   }
@@ -106,15 +106,17 @@ ms_innerread <- function(file, fchoose, treatment, nread,
     message("Set a default number for the protein abundance count to 2.")
     data$countNum <- 2
   }
+  colnames(data)[c((ncol(data)-3):(ncol(data)-1))] <- c("sumUniPeps", "sumPSMs", "countNum")
 
   data$condition <- conditions
-  colnames(data)[c((ncol(data)-3):(ncol(data)-1))] <- c("sumUnipeps", "sumPSMs", "countNum")
+
   # be sure that channels are in same order as treatment vector
   ord_channel <- sapply(channels,
                         function(y) grep(paste0(" ", y, ","), colnames(data)))
   data <- data[,c(1:2, ord_channel, (ncol(data)-3):ncol(data))]
+
   # rename columns
-  colnames(data) <- c("id", "description", treatment, "sumUnipeps",
+  colnames(data) <- c("id", "description", treatment, "sumUniPeps",
                       "sumPSMs", "countNum", "condition")
   data <- data[,c(1:2, ncol(data), 3:(ncol(data)-1))]
 
