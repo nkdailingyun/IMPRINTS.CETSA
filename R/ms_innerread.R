@@ -106,9 +106,9 @@ ms_innerread <- function(file, fchoose, treatment, nread,
     message("Set a default number for the protein abundance count to 2.")
     data$countNum <- 2
   }
-  colnames(data)[c((ncol(data)-3):(ncol(data)-1))] <- c("sumUniPeps", "sumPSMs", "countNum")
 
   data$condition <- conditions
+  colnames(data)[c((ncol(data)-3):(ncol(data)-1))] <- c("sumUniPeps", "sumPSMs", "countNum")  
 
   # be sure that channels are in same order as treatment vector
   ord_channel <- sapply(channels,
