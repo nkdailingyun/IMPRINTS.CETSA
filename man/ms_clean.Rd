@@ -7,6 +7,7 @@
 ms_clean(
   data,
   nread = 10,
+  remcontaminant = TRUE,
   remkeratin = TRUE,
   remserum = TRUE,
   remtrypsin = TRUE,

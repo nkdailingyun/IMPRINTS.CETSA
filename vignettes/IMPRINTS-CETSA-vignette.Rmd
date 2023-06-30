@@ -15,17 +15,18 @@ knitr::opts_chunk$set(
 ```
 
 ## Introduction  
-This package is primarily designed to process IMPRINTS formats of MS-CETSA result, which was first introduced in Dai et al. 2018 Cell paper ("Modulation of Protein-Interaction States through the Cell Cycle").  
-The main tasks include:  
-1. Read in the quantitative data (Search result txt.file exported from Proteome Discoverer, PD) into R/Rstudio  
-2. Clean up data, mainly to remove the entries without quantitative information  
+This package is primarily designed to process the IMPRINTS format of MS-CETSA results, first introduced in [Dai et al. 2018 Cell](https://www.cell.com/cell/fulltext/S0092-8674(18)30397-0).  
+
+The main tasks that can be accomplished in this package include:  
+1. Import the quantitative data (search result txt.file exported from Proteome Discoverer, PD) into R/Rstudio  
+2. Clean up the data, mainly to remove the entries without quantitative information  
 3. Rearrange data into one unique protein per row format  
 4. Normalize data based on the principle of minimal variance should be controlled for different samples under each heating condition (i.e.,treatment/replicate combination)  
-5. Calculate the relative fold change between treatment for each temperature/replicate combination  
+5. Calculate the relative fold change between treatments for each temperature/replicate combination  
 6. Calculate the protein abundance score and stability score, segregate proteins into a few possible categories, such as NN, NC, CN or CC  
-7. Visualize the data using customizable barplot layout, for either all the data or the subsets  
-8. Map proteins onto known complexes, calculate the correlation of IMPRINTS profiles among the protein complex subunits  
-9. Extrapolate the IMPRINTS signal onto a reference melting curve, for further visual and mathematical control  
+7. Visualize the data using a customizable bar plot layout, either for all data or for the subsets  
+8. Map proteins to known complexes, calculate the correlation of IMPRINTS profiles among the protein complex subunits  
+9. Extrapolate the IMPRINTS signal to a reference melting curve, for further visual and mathematical control  
 
 --------------------------------------------------------------------------------------------
 
@@ -103,15 +104,16 @@ Chem <- ms_conditionrename(Chem, incondition = c("37C.1","47C.2","50C.3","52C.4"
                            outcondition=c("37C","47C","50C","52C","54C","57C"))
 # to remove the "Mix" channel sample
 Chem <- Chem[,-grep("^Mix$", colnames(Chem))]
-# to only keep the proteins from the right species
-Chem_c <- Chem[grep("Homo sapiens", Chem$description), ]
 ```
 
 5. Remove proteins without quantitative information by default using `ms_clean()`.  
-By default the Keratin family proteins, Bovine serum proteins, and Human Trypsin enzymes are also removed.  
+By default the Contaminant proteins ("Cont_" in protein ID), Bos taurus proteins, Keratin family proteins, Bovine serum proteins, and Human Trypsin enzymes are removed.  
 By default the orphan proteins that even only appear in one of the datasets are NOT removed, however you can specify `remsinglecondprot=TRUE`, these orphan proteins will be excluded from downstream analysis. 
 ```{r, eval=FALSE}
 Chem_c <- ms_clean(Chem_c)
+# to only keep the proteins from the right species, in most cases, this is no more necessary, 
+# because this have been achieved in the ms_clean() function  
+Chem_c <- Chem_c[grep("Homo sapiens", Chem$description), ]
 ```
 
 6. Resolve the possible ambiguity of protein isoforms from multiple runs of searches using `ms_isoform_resolve()`.  
