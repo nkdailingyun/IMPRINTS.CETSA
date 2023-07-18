@@ -186,14 +186,45 @@ imprints_score <- function(data, format="9", basetemp="37C", basecvcheck=FALSE, 
       } else {
         ratios <- data_score_nocontrol[ ,cn]
         quants <- quantile(ratios,probs=c(0.1587,0.5,0.8413),na.rm=T)
-        ratios[is.na(ratios)] <- 0
-        pratios <- ratios>=0
-        nratios <- ratios<0
-        z <- ratios
-        z[nratios] <- ratios[nratios]/as.numeric(diff(quants)[1])
-        z[pratios] <- ratios[pratios]/as.numeric(diff(quants)[2])
+        
+        if(any(is.na(ratios))){
+          z_na <- ratios
+          qval_na <- ratios
+
+          ratios <- ratios[!is.na(ratios)]
+          pratios <- ratios>=0
+          nratios <- ratios<0
+          z <- ratios
+          z[nratios] <- ratios[nratios]/as.numeric(diff(quants)[1])
+          z[pratios] <- ratios[pratios]/as.numeric(diff(quants)[2])
+          qval <- fdrtool(z,plot=F,verbose=F)$qval
+
+          j = 1
+          for(i in seq_along(z_na)){
+            if(!is.na(z_na[i])){
+              z_na[i] <- z[j]
+              qval_na[i] <- qval[j]
+              j = j + 1
+            }
+          }
+
+          z <- z_na
+          qval <- qval_na
+
+          z[is.na(z)] <- 0
+          qval[is.na(qval)] <- 1
+        }
+        else{
+          pratios <- ratios>=0
+          nratios <- ratios<0
+          z <- ratios
+          z[nratios] <- ratios[nratios]/as.numeric(diff(quants)[1])
+          z[pratios] <- ratios[pratios]/as.numeric(diff(quants)[2])
+          qval <- fdrtool(z,plot=F,verbose=F)$qval
+        }
+        
         data_score_nocontrol[ ,paste0(cn,".z")] <- z
-        data_score_nocontrol[ ,paste0(cn,".fdr")] <- fdrtool(z,plot=F,verbose=F)$qval
+        data_score_nocontrol[ ,paste0(cn,".fdr")] <- qval
       }
     }
     data_score_z <- data_score_nocontrol
@@ -210,14 +241,45 @@ imprints_score <- function(data, format="9", basetemp="37C", basecvcheck=FALSE, 
         } else {
           ratios <- data_score1[ ,cn]
           quants <- quantile(ratios,probs=c(0.1587,0.5,0.8413),na.rm=T)
-          ratios[is.na(ratios)] <- 0
+          
+          if(any(is.na(ratios))){
+          z_na <- ratios
+          qval_na <- ratios
+
+          ratios <- ratios[!is.na(ratios)]
           pratios <- ratios>=0
           nratios <- ratios<0
           z <- ratios
           z[nratios] <- ratios[nratios]/as.numeric(diff(quants)[1])
           z[pratios] <- ratios[pratios]/as.numeric(diff(quants)[2])
+          qval <- fdrtool(z,plot=F,verbose=F)$qval
+
+          j = 1
+          for(i in seq_along(z_na)){
+            if(!is.na(z_na[i])){
+              z_na[i] <- z[j]
+              qval_na[i] <- qval[j]
+              j = j + 1
+            }
+          }
+
+          z <- z_na
+          qval <- qval_na
+
+          z[is.na(z)] <- 0
+          qval[is.na(qval)] <- 1
+        }
+        else{
+          pratios <- ratios>=0
+          nratios <- ratios<0
+          z <- ratios
+          z[nratios] <- ratios[nratios]/as.numeric(diff(quants)[1])
+          z[pratios] <- ratios[pratios]/as.numeric(diff(quants)[2])
+          qval <- fdrtool(z,plot=F,verbose=F)$qval
+        }
+          
           data_score1[ ,paste0(cn,".z")] <- z
-          data_score1[ ,paste0(cn,".fdr")] <- fdrtool(z,plot=F,verbose=F)$qval
+          data_score1[ ,paste0(cn,".fdr")] <- qval
         }
       }
       data_score_z <- rbind(data_score_z, data_score1)
@@ -249,6 +311,7 @@ imprints_score <- function(data, format="9", basetemp="37C", basecvcheck=FALSE, 
       data_score_z <- data_score_z %>%
         dplyr::mutate(category=paste0(as.character(abundance.hit),as.character(stability.hit),
                                       as.character(abundance.sign),as.character(stability.sign)))
+      data_score_z$category <- gsub("NA","FALSE",data_score_z$category)
       data_score_z$category <- gsub("FALSE","N",data_score_z$category)
       data_score_z$category <- gsub("TRUE","C",data_score_z$category)
       data_score_z$category <- gsub("NN[CN]{2}","NN",data_score_z$category)
@@ -267,6 +330,7 @@ imprints_score <- function(data, format="9", basetemp="37C", basecvcheck=FALSE, 
         dplyr::mutate(stability.hit=ifelse(abs(stability.score.mean)>stabilitycutoff,T,F))
       data_score_z <- data_score_z %>%
         dplyr::mutate(category=paste0(as.character(abundance.hit),as.character(stability.hit)))
+      data_score_z$category <- gsub("NA","FALSE",data_score_z$category)
       data_score_z$category <- gsub("FALSE","N",data_score_z$category)
       data_score_z$category <- gsub("TRUE","C",data_score_z$category)
     }
