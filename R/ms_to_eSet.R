@@ -37,7 +37,7 @@ ms_to_eSet <- function(data, matrixonly=FALSE, proteininfo=NULL, nread=NULL,
   stopifnot(nread == nrow(pdata)) # make sure all the numeric column has proper phenotype labels
 
   if (matrixonly) {
-    data <- data.frame(data)
+    data <- data.frame(data, check.names = FALSE)
     data <- tibble::rownames_to_column(data, var="id")
     #print(head(data))
     #print(length(unique(data$id)))
@@ -69,9 +69,7 @@ ms_to_eSet <- function(data, matrixonly=FALSE, proteininfo=NULL, nread=NULL,
   # print(head(exprs))
   # print(dim(pdata))
   # print(rownames(pdata))
-  if (sum(grepl("^X[0-9]+C",colnames(exprs)))==nread) {
-    colnames(exprs) <- gsub("^X","",colnames(exprs))
-  }
+  
   # print(head(exprs))
   # print(summary(pdata))
   # print(sapply(pdata, class))
