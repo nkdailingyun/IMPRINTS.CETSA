@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>IMPRINTS-CETSA-vignette</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+
+
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">IMPRINTS-CETSA-vignette</h1>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>This package is primarily designed to process the IMPRINTS format of
+MS-CETSA results, first introduced in <a href="https://www.cell.com/cell/fulltext/S0092-8674(18)30397-0">Dai et
+al. 2018 Cell</a>.</p>
+<p>The main tasks that can be accomplished in this package
+include:<br />
+1. Import the quantitative data (search result txt.file exported from
+Proteome Discoverer, PD) into R/Rstudio<br />
+2. Clean up the data, mainly to remove the entries without quantitative
+information<br />
+3. Rearrange data into one unique protein per row format<br />
+4. Normalize data based on the principle of minimal variance should be
+controlled for different samples under each heating condition
+(i.e.,treatment/replicate combination)<br />
+5. Calculate the relative fold change between treatments for each
+temperature/replicate combination<br />
+6. Calculate the protein abundance score and stability score, segregate
+proteins into a few possible categories, such as NN, NC, CN or CC<br />
+7. Visualize the data using a customizable bar plot layout, either for
+all data or for the subsets<br />
+8. Map proteins to known complexes, calculate the correlation of
+IMPRINTS profiles among the protein complex subunits<br />
+9. Extrapolate the IMPRINTS signal to a reference melting curve, for
+further visual and mathematical control</p>
+<hr />
+</div>
+<div id="prerequisites" class="section level2">
+<h2>Prerequisites</h2>
+<ul>
+<li>R version &gt;= 4.0.0, preferably the most updated version<br />
+</li>
+<li>Rstudio version &gt; 1.0, preferably the most updated version<br />
+</li>
+<li>Imported packages:<br />
+arrayQualityMetrics, Biobase, dplyr (&gt;= 1.0.0), drc (&gt;= 3.0),
+fdrtool, GGally, ggplot2 (&gt;= 3.2.0), ggpubr, ggrepel (&gt;= 0.8.0),
+graphics, grDevices, grid, gridExtra, gridSVG, gtools, limma, MESS,
+methods, mice, Nozzle.R1, plyr (&gt;= 1.8.0), RColorBrewer, readr (&gt;=
+2.0.0), reshape2 (&gt;= 1.4.0), scales, stats, tibble (&gt;= 3.0.0),
+tidyr (&gt;= 1.2.0), utils, VennDiagram, VIM, XML During the package
+installation process from local source, when these dependent packages
+are not available, complains would rise, use
+<code>install.packges()</code> or <code>BiocManager::install()</code>
+command to manually install the required supporting packages (as
+specified in the warning message), till there is no more complain.</li>
+</ul>
+</div>
+<div id="proceessing" class="section level2">
+<h2>Proceessing</h2>
+<ol style="list-style-type: decimal">
+<li><p>For better organization of data analysis, it is <strong>highly
+recommended</strong> to use the <a href="https://support.rstudio.com/hc/en-us/articles/200526207-Using-Projects">Project
+management feature</a> in Rstudio.<br />
+For each project, you are suggested to create a brand new working folder
+as your local working directory.<br />
+Save the PD derived data files to this working directory folder.<br />
+At the right up corner of Rstudio, click Project -&gt; New Project -&gt;
+Existing Directory -&gt; browse and choose the designated working
+directory folder.<br />
+By establishing a specific project for each experiment, all the data
+content and execution history will be saved in the project for future
+analysis even when R session is terminated.</p></li>
+<li><p>Activate <code>IMPRINTS.CETSA</code> package by library
+it.</p></li>
+</ol>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(IMPRINTS.CETSA)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Registered S3 method overwritten by &#39;GGally&#39;:</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   method from   </span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   +.gg   ggplot2</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Welcome to IMPRINTS.CETSA! This is a sister package of mineCETSA!</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Now it&#39;s the time to start mining your IMPRINTS-CETSA data!</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; The vignette below explain in detail how to use this package</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Access the respective vignettes by key in: </span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; vignette(&#39;IMPRINTS-CETSA-vignette&#39;, package=&#39;IMPRINTS.CETSA&#39;)</span></span></code></pre></div>
+<ol start="3" style="list-style-type: decimal">
+<li>Read in data from result files, <code>imprints_rawread()</code> is
+designed for read in one or many files in a vector of file names.<br />
+This function would extract the protein abundance values and use for
+systematic normalization in the next step.<br />
+Note that for simplicity, during the data search in PD software, always
+use channel <strong>126</strong> as control channel for data search in
+PD, regardless of the labeling arrangement.<br />
+You need to specify a <code>treatment</code> vector of the treatment
+used in the same order as the sample being labeled from 126 up to 131,
+ideally the replicate information should also be included, the replicate
+and treatment characters should be separated by an underline (_).<br />
+Note that both replicate and treatment character should not contain
+neither underline nor space, in addition they should not start with
+number or other special character.</li>
+</ol>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>Chem <span class="ot">&lt;-</span> <span class="fu">imprints_rawread</span>(<span class="fu">c</span>(<span class="st">&quot;Chem_37C_3bio_Proteins.txt&quot;</span>,</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>                           <span class="st">&quot;Chem_47C_3bio_Proteins.txt&quot;</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>                           <span class="st">&quot;Chem_50C_3bio_Proteins.txt&quot;</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>                           <span class="st">&quot;Chem_52C_3bio_Proteins.txt&quot;</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>                           <span class="st">&quot;Chem_54C_3bio_Proteins.txt&quot;</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>                           <span class="st">&quot;Chem_57C_3bio_Proteins.txt&quot;</span>),</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>                         <span class="at">treatment=</span><span class="fu">c</span>(<span class="st">&quot;B1_G1S&quot;</span>,<span class="st">&quot;B1_S&quot;</span>,<span class="st">&quot;B1_PM&quot;</span>,<span class="st">&quot;B2_G1S&quot;</span>,<span class="st">&quot;B2_S&quot;</span>,<span class="st">&quot;B2_PM&quot;</span>,<span class="st">&quot;B3_G1S&quot;</span>,<span class="st">&quot;B3_S&quot;</span>,<span class="st">&quot;B3_PM&quot;</span>,<span class="st">&quot;Mix&quot;</span>))</span></code></pre></div>
+<ol start="4" style="list-style-type: decimal">
+<li>Customize the condition names in dataset using
+<code>ms_conditionrename()</code>.<br />
+When read in multiple files, a number suffix is added to the condition
+of each data file in sequence. This feature seems redundant but could
+allow for the retrieval of files read in sequence, and more importantly,
+make sure the condition names are always unique and
+distinguishable.<br />
+In IMPRINTS-CETSA, one heating temperature is used for each condition.
+When multiple sets of samples are present in a complex experimental
+layout, the user should use a format of
+<em>“set_temperature”</em>.<br />
+The argument <code>incondition</code> corresponds to the vector of
+current condition namings, whereas <code>outcondition</code> correponds
+to the vector of new condition namings, both order and length should
+match exactly.</li>
+</ol>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>Chem <span class="ot">&lt;-</span> <span class="fu">ms_conditionrename</span>(Chem, <span class="at">incondition =</span> <span class="fu">c</span>(<span class="st">&quot;37C.1&quot;</span>,<span class="st">&quot;47C.2&quot;</span>,<span class="st">&quot;50C.3&quot;</span>,<span class="st">&quot;52C.4&quot;</span>,<span class="st">&quot;54C.5&quot;</span>,<span class="st">&quot;57C.6&quot;</span>),</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>                           <span class="at">outcondition=</span><span class="fu">c</span>(<span class="st">&quot;37C&quot;</span>,<span class="st">&quot;47C&quot;</span>,<span class="st">&quot;50C&quot;</span>,<span class="st">&quot;52C&quot;</span>,<span class="st">&quot;54C&quot;</span>,<span class="st">&quot;57C&quot;</span>))</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># to remove the &quot;Mix&quot; channel sample</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>Chem <span class="ot">&lt;-</span> Chem[,<span class="sc">-</span><span class="fu">grep</span>(<span class="st">&quot;^Mix$&quot;</span>, <span class="fu">colnames</span>(Chem))]</span></code></pre></div>
+<ol start="5" style="list-style-type: decimal">
+<li>Remove proteins without quantitative information by default using
+<code>ms_clean()</code>.<br />
+By default the Contaminant proteins (“Cont_” in protein ID), Bos taurus
+proteins, Keratin family proteins, Bovine serum proteins, and Human
+Trypsin enzymes are removed.<br />
+By default the orphan proteins that even only appear in one of the
+datasets are NOT removed, however you can specify
+<code>remsinglecondprot=TRUE</code>, these orphan proteins will be
+excluded from downstream analysis.</li>
+</ol>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>Chem_c <span class="ot">&lt;-</span> <span class="fu">ms_clean</span>(Chem_c)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># to only keep the proteins from the right species, in most cases, this is no more necessary, </span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co"># because this have been achieved in the ms_clean() function  </span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>Chem_c <span class="ot">&lt;-</span> Chem_c[<span class="fu">grep</span>(<span class="st">&quot;Homo sapiens&quot;</span>, Chem<span class="sc">$</span>description), ]</span></code></pre></div>
+<ol start="6" style="list-style-type: decimal">
+<li>Resolve the possible ambiguity of protein isoforms from multiple
+runs of searches using <code>ms_isoform_resolve()</code>.<br />
+When two or more isoforms of the same parental proteins are present in
+the combined datasets but within each individual condition, only one
+isoform is identified, according to the principle of parsimony, the
+minor isoforms will be automatically adjusted to be the corresponding
+major or more frequently observed isoform. At the same time, a match
+table will be suggested to further consolidate the cases that when two
+or more isoforms of the same parental proteins are identified within the
+same individual conditioned dataset, which could then be achieved by
+using <code>ms_isoform_consolidate()</code>.</li>
+</ol>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>Chem_c1 <span class="ot">&lt;-</span> <span class="fu">ms_isoform_resolve</span>(Chem_c)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># The next isoform cleaning is optional.  </span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># You should and are encouraged to double check and adjust the match table entries.  </span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>Chem_c2 <span class="ot">&lt;-</span> <span class="fu">ms_isoform_consolidate</span>(Chem_c1, <span class="at">nread=</span><span class="dv">9</span>, <span class="at">matchtable =</span> <span class="st">&quot;./subfolder/tobe_consolidated.txt&quot;</span>)</span></code></pre></div>
+<ol start="7" style="list-style-type: decimal">
+<li>Rearrange the dataset into the format of one unique protein per row
+using <code>imprints_rearrange()</code>.<br />
+The arguments and its default value include:
+<ul>
+<li><code>nread=9</code>, how many readings in the dataset, default is 9
+for 3X3 IMPRINTS format<br />
+</li>
+<li><code>repthreshold=0.75</code>, the minimal percentage threshold of
+protein being sampled from multiple runs, default value is 75%, user
+should adjust accordingly<br />
+</li>
+<li><code>averagecount=TRUE</code>, whether to median average the
+supporting PSM/peptide/count numbers, default set to TRUE<br />
+</li>
+<li><code>countthreshold=2</code>, the minimal threshold number of
+associated abundance count of proteins, default value is 2<br />
+Output in working directory:<br />
+</li>
+</ul></li>
+</ol>
+<ul>
+<li>A copy of the rearranged dataset are written into local
+directory</li>
+</ul>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>Chem_c3 <span class="ot">&lt;-</span> <span class="fu">imprints_rearrange</span>(Chem_c2, <span class="at">nread=</span><span class="dv">9</span>, <span class="at">repthreshold=</span><span class="fl">0.8</span>, <span class="at">countthreshold=</span><span class="dv">1</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>Chem_c3 <span class="ot">&lt;-</span> <span class="fu">imprints_rearrange</span>(Chem_c2, <span class="at">nread=</span><span class="dv">9</span>, <span class="at">repthreshold=</span><span class="dv">1</span>, <span class="at">countthreshold=</span><span class="dv">3</span>)</span></code></pre></div>
+<ol start="8" style="list-style-type: decimal">
+<li>Perform a systematic normalization on the whole dataset using
+<code>imprints_normalization()</code>. In this function, a VSN-based
+model normalization is first applied, and then the function
+‘removeBatchEffect’ from limma R package is called to remove potential
+batch effect.</li>
+</ol>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>Chem_s <span class="ot">&lt;-</span> <span class="fu">imprints_normalization</span>(Chem_c3)</span></code></pre></div>
+<p>(Pause step) The user should check the normalization report in the
+local directory before proceeding to the next step.</p>
+<ol start="9" style="list-style-type: decimal">
+<li>Calculate the relative fold change between treatment for each
+temperature/replicate combination in the dataset using
+<code>imprints_caldiff()</code>.<br />
+The arguments and its default value include:
+<ul>
+<li><code>reftreatment</code>, the name of treatment used as the
+reference control to calculate the relative fold changes, such as “DMSO”
+or “Ctrl”</li>
+</ul></li>
+</ol>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>Chem_s1 <span class="ot">&lt;-</span> <span class="fu">imprints_caldiff</span>(Chem_s, <span class="at">reftreatment=</span><span class="st">&quot;G1S&quot;</span>)</span></code></pre></div>
+<ol start="10" style="list-style-type: decimal">
+<li>(Optional) To retrieve a reproducible subset of the IMPRINTS-CETSA
+dataset using <code>imprints_reproducible()</code>, regarding to
+expression level changes and thermal shifts<br />
+The arguments and its default value include:
+<ul>
+<li><code>cvthreshold</code> the CV threshold value for subsetting
+reproducible measurements, default value is 0.1<br />
+</li>
+<li><code>corrthreshold</code> the Correlation threshold value for
+subsetting reproducible measurements, default value is 0.5</li>
+</ul></li>
+</ol>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>Chem_s2 <span class="ot">&lt;-</span> <span class="fu">imprints_reproducible</span>(Chem_s1)</span></code></pre></div>
+<ol start="11" style="list-style-type: decimal">
+<li>Carry out data segregation based on the relative protein expression
+level change and thermal shift using <code>imprints_score()</code>, the
+basic definition formula was adapted from Becher et al. 2018.<br />
+Depending on the chosen format value, the <code>imprints_score()</code>
+function can segregate the proteins into “NN”, “CN”, “NC”, and “CC” four
+categories, or into 9 categories: “NN”, “CN+”, “CN-”, “NC+”, “NC-”,
+“CC++”, “CC+-”, “CC-+”, “CC–”. These categories are named after the
+abbreviation that “C” means “Changes” while “N” means “No Changes”, and
+the first letter indicates the change in protein expression level while
+the second letter indicates the change in thermal shift. The “+” or “-”
+sign in the 9-category format is determined by the direction of changes
+of expression and thermal stability, respectively, i.e., the sign of
+abundance.score and stability.score.mean.</li>
+</ol>
+<p>The arguments and its default value include:<br />
+* <code>format</code> a character choosing between 9 and 4, indicating
+how many categories to segregate, default value is 9<br />
+* <code>basetemp</code> a character indicating the baseline temperature
+used for protein level measurement, default value is 37C<br />
+* <code>allzscore</code> whether to use all the readings from all the
+different treatment groups when calculating the z score, default set to
+TRUE<br />
+* <code>fdrthreshold</code> the significance level of global fdr,
+default value is 0.01<br />
+* <code>useMAD</code> whether to use MAD scheme for significance
+analysis, default set to FALSE<br />
+* <code>nMAD</code> the significance level of MAD, default value
+2.5<br />
+* <code>labelnodes</code> whether to text label the selected nodes in
+the graph, default set to FALSE<br />
+* <code>labelcategory</code> the categories of nodes to label in the
+graph, default is c(“CC”,“NC”,“CN”)<br />
+* <code>labelgeneid</code> a vector of the gene symbol id to show on the
+plot, this is exclusive from labelcategory</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>Chem_score <span class="ot">&lt;-</span> <span class="fu">imprints_score</span>(Chem_s1, <span class="at">fdrthreshold=</span><span class="fl">0.05</span>, <span class="at">labelnodes=</span><span class="cn">TRUE</span>, <span class="at">labelcategory=</span><span class="st">&quot;CC+-&quot;</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>Chem_score_mad <span class="ot">&lt;-</span> <span class="fu">imprints_score</span>(Chem_s1, <span class="at">useMAD=</span><span class="cn">TRUE</span>, <span class="at">nMAD=</span><span class="fl">2.5</span>, <span class="at">labelnodes=</span><span class="cn">TRUE</span>, <span class="at">labelcategory=</span><span class="st">&quot;CC+-&quot;</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>Chem_score_4 <span class="ot">&lt;-</span> <span class="fu">imprints_score</span>(Chem_s1, <span class="at">format=</span><span class="st">&quot;4&quot;</span>, <span class="at">labelnodes=</span><span class="cn">TRUE</span>, <span class="at">labelcategory=</span><span class="st">&quot;CC&quot;</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co"># could use the reproducible subset if the previous step was performed</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>Chem_score_r <span class="ot">&lt;-</span> <span class="fu">imprints_score</span>(Chem_s2, <span class="at">labelnodes=</span><span class="cn">TRUE</span>, <span class="at">labelcategory=</span><span class="st">&quot;CC+-&quot;</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>Chem_score_4r <span class="ot">&lt;-</span> <span class="fu">imprints_score</span>(Chem_s2, <span class="at">format=</span><span class="st">&quot;4&quot;</span>, <span class="at">labelnodes=</span><span class="cn">TRUE</span>, <span class="at">labelcategory=</span><span class="st">&quot;CC&quot;</span>)</span></code></pre></div>
+<ol start="12" style="list-style-type: decimal">
+<li>Plot out the bar graph plot for each protein using
+<code>imprints_barplotting()</code>.<br />
+The arguments and its default value includes:
+<ul>
+<li><code>treatmentlevel</code>, a vector to specify the treatment
+keyword information, the order determines the color arrangement as set
+in colorpanel<br />
+</li>
+<li><code>setlevel</code>, a vector to specify the set key word
+information if any<br />
+</li>
+<li><code>colorpanel=c(&quot;gray&quot;, &quot;blue&quot;, &quot;orange&quot;)</code> a vector to
+customize the colors. The user is encouraged to refer to <a href="http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf">Colors in
+R</a> or <a href="https://www.nceas.ucsb.edu/~frazier/RSpatialGuides/colorPaletteCheatsheet.pdf">R
+Color Cheatsheet</a> for more color selection.</li>
+</ul></li>
+</ol>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot out some proteins   </span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>cyclin <span class="ot">&lt;-</span> Chem_s1[<span class="fu">grep</span>(<span class="st">&quot;[Cc]yclin[- ]&quot;</span>,Chem_s1<span class="sc">$</span>description),]</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">imprints_barplotting</span>(cyclin, <span class="at">treatmentlevel=</span><span class="fu">c</span>(<span class="st">&quot;G1S&quot;</span>,<span class="st">&quot;S&quot;</span>,<span class="st">&quot;PM&quot;</span>))</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># plot out the proteins from one category  </span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>Chem_CC <span class="ot">&lt;-</span> <span class="fu">subset</span>(Chem_s1, id <span class="sc">%in%</span> <span class="fu">subset</span>(Chem_score_4, category<span class="sc">==</span><span class="st">&quot;CC&quot;</span>)<span class="sc">$</span>id)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="fu">imprints_barplotting</span>(Chem_CC, <span class="at">treatmentlevel=</span><span class="fu">c</span>(<span class="st">&quot;G1S&quot;</span>,<span class="st">&quot;S&quot;</span>,<span class="st">&quot;PM&quot;</span>))</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># plot out all the proteins  </span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="fu">imprints_barplotting</span>(Chem_s1, <span class="at">treatmentlevel=</span><span class="fu">c</span>(<span class="st">&quot;G1S&quot;</span>,<span class="st">&quot;S&quot;</span>,<span class="st">&quot;PM&quot;</span>))</span></code></pre></div>
+<ol start="13" style="list-style-type: decimal">
+<li>Map proteins onto known complexes, calculate the correlation of
+IMPRINTS profiles among the complex subunits using
+<code>imprints_complex_mapping()</code> and
+<code>imprints_corr_in_complex()</code>.<br />
+The input dataset should be the average IMPRINTS profile, i.e., after
+<code>imprints_average()</code>, make sure the columns with readings are
+named in the format like “37C_Treatment”. In addition, the category
+information in the dataset from <code>imprints_score()</code> should be
+provided, to allow focus on a subset of the data, say the “Changed”
+proteins.<br />
+The arguments and its default value in
+<code>imprints_complex_mapping()</code> includes:
+<ul>
+<li><code>categorytable</code> dataset after
+<code>imprints_score()</code><br />
+</li>
+<li><code>set</code> a single character to specify the sample name to
+analyze if any<br />
+</li>
+<li><code>treatment</code> a single character to specify the sample name
+to analyze<br />
+</li>
+<li><code>targetcategory=c(&quot;NC&quot;,&quot;CN&quot;,&quot;CC&quot;)</code> by default only to use
+the proteins with either abundance or stability changes<br />
+</li>
+<li><code>complexdatabase=&quot;Corum&quot;</code> the default complex database
+used is core set of CORUM database, can use <code>View(coreCorum)</code>
+to check the available complexes<br />
+</li>
+<li><code>organism=&quot;Human&quot;</code> user can switch to Mouse or Rat if
+necessary<br />
+</li>
+<li><code>complexID</code> if provided, only the specified complexes
+were used, default to NULL, ie, use all the possible complexes from the
+whole database<br />
+</li>
+<li><code>minsubunitsIdentified</code> the minimal number of subunits in
+the data, default value is 3</li>
+</ul></li>
+</ol>
+<p>The arguments and its default value in
+<code>imprints_corr_in_complex()</code> includes:<br />
+* <code>nread=6</code>, how many readings in the dataset, default is 6
+temperatures<br />
+* <code>removeredundancy</code> scrutinize the complex input, to remove
+the redundancy according to the measured subunits, default set to
+FALSE<br />
+* <code>similaritythreshold</code> the threshold for similarity, useful
+only when <code>removeredundancy=TRUE</code>, default value 1.0 to only
+remove the complete overlap ones</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># to first average the data</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>Chem_s1_ave <span class="ot">&lt;-</span> <span class="fu">imprints_average</span>(Chem_s1)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co"># to check the proteins in PM with Changes to complex</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>Chem_PM_complex <span class="ot">&lt;-</span> <span class="fu">imprints_complex_mapping</span>(Chem_s1_ave, Chem_score_4,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>                                          <span class="at">treatment=</span><span class="st">&quot;PM&quot;</span>, <span class="at">targetcategory=</span><span class="fu">c</span>(<span class="st">&quot;NC&quot;</span>,<span class="st">&quot;CN&quot;</span>,<span class="st">&quot;CC&quot;</span>), </span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>                                          <span class="at">organism=</span><span class="st">&quot;Human&quot;</span>)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co"># to calculate the correlation of IMPRINTS profiles </span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>Chem_PM_complex_corr <span class="ot">&lt;-</span> <span class="fu">imprints_corr_in_complex</span>(Chem_PM_complex, <span class="at">nread=</span><span class="dv">6</span>)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="co"># to remove the redundant complexes with highly similar composition of protein subunits</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>Chem_PM_complex_corr <span class="ot">&lt;-</span> <span class="fu">imprints_corr_in_complex</span>(Chem_PM_complex, <span class="at">nread=</span><span class="dv">6</span>, </span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>                                                 <span class="at">removeredundancy=</span>T)</span></code></pre></div>
+<ol start="14" style="list-style-type: decimal">
+<li>Calculate the correlation of the IMPRINTS profiles for the same
+protein in two different treatments using
+<code>imprints_correlation()</code>.<br />
+The arguments and its default value in
+<code>imprints_correlation()</code> includes:
+<ul>
+<li><code>data</code> the input data is typically after
+<code>imprints_average()</code><br />
+</li>
+<li><code>setvector</code> a two-element character vector with
+distinguishable keyword from the column names of the input dataset if
+any<br />
+</li>
+<li><code>treatmentvector</code> a two-element character vector with
+distinguishable keyword from the column names of the input dataset</li>
+</ul></li>
+</ol>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># It is possible to look at the whole dataset, but it is not recommended to run like below</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Chem_s1_corr &lt;- imprints_correlation(Chem_s1_ave, treatmentvector=c(&quot;S&quot;,&quot;PM&quot;))</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co"># It is probably more useful to only look at the &quot;Changed&quot; proteins</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>Chem_s1_ave_C <span class="ot">&lt;-</span> <span class="fu">subset</span>(Chem_s1_ave, id <span class="sc">%in%</span> <span class="fu">subset</span>(Chem_score_4,      </span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>                                                    category<span class="sc">%in%</span><span class="fu">c</span>(<span class="st">&quot;CC&quot;</span>,<span class="st">&quot;NC&quot;</span>,<span class="st">&quot;CN&quot;</span>))<span class="sc">$</span>id)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>Chem_s1_corr1 <span class="ot">&lt;-</span> <span class="fu">imprints_correlation</span>(Chem_s1_ave_C, <span class="at">treatmentvector=</span><span class="fu">c</span>(<span class="st">&quot;S&quot;</span>,<span class="st">&quot;PM&quot;</span>))</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Then it is possible to plot these &quot;Changed&quot; proteins in a descending order of the correlations, which is controlled by specifying the correlation information  </span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>Chem_s1_C <span class="ot">&lt;-</span> <span class="fu">subset</span>(Chem_s1, id <span class="sc">%in%</span> <span class="fu">subset</span>(Chem_score_4, category<span class="sc">%in%</span><span class="fu">c</span>(<span class="st">&quot;CC&quot;</span>,<span class="st">&quot;NC&quot;</span>,<span class="st">&quot;CN&quot;</span>))<span class="sc">$</span>id)</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="fu">imprints_barplotting</span>(Chem_s1_C, <span class="at">treatmentlevel=</span><span class="fu">c</span>(<span class="st">&quot;G1S&quot;</span>,<span class="st">&quot;S&quot;</span>,<span class="st">&quot;PM&quot;</span>), <span class="at">corrtable=</span>Chem_s1_corr1)</span></code></pre></div>
+<ol start="15" style="list-style-type: decimal">
+<li>It is also possible to do standard protein level differential
+expression analysis from IMPRINTS dataset, using
+<code>imprints_diffExp()</code>.
+<ul>
+<li><code>data</code> the input dataset after
+<code>imprints_normalization()</code> function, readings in log2
+format<br />
+</li>
+<li><code>set</code> a single character to specify the sample name if
+any<br />
+</li>
+<li><code>contrast</code> a character to indicate the contrasting
+treatment conditions, typically in a “Condition1-Condition2”
+format<br />
+</li>
+<li><code>logFC_threshold</code> the threshold value for log fold
+changes, default set at 0.3<br />
+</li>
+<li><code>adjp_threshold</code> the threshold value for adjusted p
+values, default set at 0.01</li>
+</ul></li>
+</ol>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>Chem_PM_de <span class="ot">&lt;-</span> <span class="fu">imprints_diffExp</span>(Chem_s, <span class="at">contrast=</span><span class="st">&quot;PM-G1S&quot;</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>Chem_S_de <span class="ot">&lt;-</span> <span class="fu">imprints_diffExp</span>(Chem_s, <span class="at">contrast=</span><span class="st">&quot;S-G1S&quot;</span>)</span></code></pre></div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
