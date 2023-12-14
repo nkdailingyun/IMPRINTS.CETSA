@@ -39,6 +39,7 @@ Imports:
 Suggests:
     arrayQualityMetrics,
     limma,
+    vsn,
     knitr,
     rmarkdown,
     roxygen2
