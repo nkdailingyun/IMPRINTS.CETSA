@@ -127,6 +127,15 @@ ms_innerread <- function(file, fchoose, treatment, nread,
     }
   }
   else if(software == "MaxQuant"){
+    # removing proteins marked as reversed if any
+    pattern <- grep("^(R|r)everse$", names(data), value=FALSE)
+    if (length(pattern) > 0) {
+      reversed <- which(data[[pattern]] == "+")
+      if(length(reversed)){
+        data <- data[-reversed,]
+      }
+    }
+
     id <- grep(pattern = "^Majority protein IDs$", colnames)
     description <- grep(pattern = "^Fasta (H|h)eaders$", colnames)
     sumUnipeps <-  grep(pattern = "^Unique (P|p)eptides$", colnames)
