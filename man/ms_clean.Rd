@@ -7,7 +7,7 @@
 ms_clean(
   data,
   nread = 10,
-  remcontaminant = TRUE,
+  prefixcontaminant = "",
   remkeratin = TRUE,
   remserum = TRUE,
   remtrypsin = TRUE,
@@ -18,6 +18,8 @@ ms_clean(
 \item{data}{dataset to be cleaned up}
 
 \item{nread}{number of reading channels or sample treatments, default value 10}
+
+\item{prefixcontaminant}{Character corresponding to the prefix used to identify contaminants.}
 
 \item{remkeratin}{whether to remove Keratin protein, which is generally
 considered as a common contaminant, default set to TRUE}

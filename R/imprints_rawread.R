@@ -12,7 +12,8 @@
 #' @param refchannel names of reference channel used in Proteome Discoverer search, default value 126
 #' @param channels names of the read-in channels, default value NULL, it would automatically
 #' match the provided channel number when it is 10, 11, 16 or 18
-#'
+#'  @param software Software used to obtain Protein Group files. Either PD, MaxQuant or pFind.
+#'   Default is PD.
 #'
 #' @importFrom dplyr filter group_by left_join mutate rowwise summarise top_n ungroup
 #' @importFrom magrittr %>%
@@ -26,8 +27,10 @@
 #'
 #'
 imprints_rawread <- function(filevector, fchoose=FALSE, treatment=NULL, nread=10,
-                             fdrcontrol=FALSE, refchannel="126", channels=NULL) {
+                             fdrcontrol=FALSE, refchannel="126", channels=NULL,
+                             software = c("PD", "MaxQuant", "pFind")) {
 
+  software <- match.arg(software)
   if (nread==10 & length(channels)==0) {
     channels=c("126","127N","127C","128N","128C","129N","129C","130N","130C","131")
   } else if (nread==11 & length(channels)==0) {
@@ -58,7 +61,7 @@ imprints_rawread <- function(filevector, fchoose=FALSE, treatment=NULL, nread=10
     dirname_l <- unlist(strsplit(dirname, split="/"))
     dirname <- dirname_l[length(dirname_l)]
     data <- ms_innerread(filevector, fchoose, treatment, nread,
-                         fdrcontrol, refchannel, channels)
+                         fdrcontrol, refchannel, channels, software)
     data <- ms_dircreate(dirname, data)
     outdir <- attr(data,"outdir")
     if (length(attr(data,"outdir"))==0 & length(outdir)>0) {
@@ -67,18 +70,19 @@ imprints_rawread <- function(filevector, fchoose=FALSE, treatment=NULL, nread=10
     message("The data composition under each experimental condition (read in) is:")
     print(table(data$condition))
     return(data)
-  } else {
+  }
+  else {
     filename <- filevector[1]
     dirname <- deparse(substitute(filename))
     dirname_l <- unlist(strsplit(dirname, split="/"))
     dirname <- dirname_l[length(dirname_l)]
     indata <- ms_innerread(filevector[1], fchoose, treatment, nread,
-                           fdrcontrol, refchannel, channels)
+                           fdrcontrol, refchannel, channels, software)
     indata <- dplyr::mutate(indata, condition = paste0(condition,".1"))
     outdata <- indata
     for (i in 2:flength) {
       indata <- ms_innerread(filevector[i], fchoose, treatment, nread,
-                             fdrcontrol, refchannel, channels)
+                             fdrcontrol, refchannel, channels, software)
       indata <- dplyr::mutate(indata, condition = paste0(condition, ".", i))
       outdata <- rbind(x=outdata, y=indata)
     }

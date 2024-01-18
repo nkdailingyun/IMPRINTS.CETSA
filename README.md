@@ -29,7 +29,7 @@ Moreover, you'll need to install two packages from Bioconductor with this comman
 if(!requireNamespace("BiocManager", quietly = TRUE)){
    install.packages("BiocManager") 
 }
-BiocManager::install(c("limma", "arrayQualityMetrics"))
+BiocManager::install(c("limma", "arrayQualityMetrics", "vsn"))
 ```
 
 When all of this is done, type and run the following commands in R console:
