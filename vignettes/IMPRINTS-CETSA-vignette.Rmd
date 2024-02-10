@@ -85,6 +85,7 @@ This function would extract the protein abundance values and use for systematic 
 Note that for simplicity, during the data search in PD software, always use channel __126__ as control channel for data search in PD, regardless of the labeling arrangement.  
 You need to specify a `treatment` vector of the treatment used in the same order as the sample being labeled from 126 up to 131, ideally the replicate information should also be included, the replicate and treatment characters should be separated by an underline (_).  
 Note that both replicate and treatment character should not contain neither underline nor space, in addition they should not start with number or other special character.  
+The ProteinGroup data exported from Proteome Discoverer (PD) or MaxQuant is currently supported. Default is PD.  
 ```{r, eval=FALSE}
 Chem <- imprints_rawread(c("Chem_37C_3bio_Proteins.txt",
                            "Chem_47C_3bio_Proteins.txt",
@@ -107,8 +108,8 @@ Chem <- Chem[,-grep("^Mix$", colnames(Chem))]
 ```
 
 5. Remove proteins without quantitative information by default using `ms_clean()`.  
-By default the Contaminant proteins ("Cont_" in protein ID), Bos taurus proteins, Keratin family proteins, Bovine serum proteins, and Human Trypsin enzymes are removed.  
-By default the orphan proteins that even only appear in one of the datasets are NOT removed, however you can specify `remsinglecondprot=TRUE`, these orphan proteins will be excluded from downstream analysis. 
+By default the Contaminant proteins ("Cont_" in protein ID), Bos taurus proteins, Keratin family proteins, Bovine serum proteins, and Human Trypsin enzymes are removed. The default parameter for prefixcontaminant is "Cont".  
+By default the orphan proteins that even only appear in one of the datasets are NOT removed, however you can specify `remsinglecondprot=TRUE`, these orphan proteins will be excluded from downstream analysis.  
 ```{r, eval=FALSE}
 Chem_c <- ms_clean(Chem_c)
 # to only keep the proteins from the right species, in most cases, this is no more necessary, 

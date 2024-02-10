@@ -12,8 +12,8 @@
 #' @param refchannel names of reference channel used in Proteome Discoverer search, default value 126
 #' @param channels names of the read-in channels, default value NULL, it would automatically
 #' match the provided channel number when it is 10, 11, 16 or 18
-#'  @param software Software used to obtain Protein Group files. Either PD, MaxQuant or pFind.
-#'   Default is PD.
+#' @param software software used to process the IMPRINTS-CETSA raw data and obtain ProteinGroup files.
+#' Either Proteome Discoverer (PD) or MaxQuant is currently supported. Default is PD.
 #'
 #' @importFrom dplyr filter group_by left_join mutate rowwise summarise top_n ungroup
 #' @importFrom magrittr %>%

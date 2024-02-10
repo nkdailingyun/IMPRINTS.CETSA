@@ -430,7 +430,9 @@ ideally the replicate information should also be included, the replicate
 and treatment characters should be separated by an underline (_).<br />
 Note that both replicate and treatment character should not contain
 neither underline nor space, in addition they should not start with
-number or other special character.</li>
+number or other special character.<br />
+The ProteinGroup data exported from Proteome Discoverer (PD) or MaxQuant
+is currently supported. Default is PD.</li>
 </ol>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>Chem <span class="ot">&lt;-</span> <span class="fu">imprints_rawread</span>(<span class="fu">c</span>(<span class="st">&quot;Chem_37C_3bio_Proteins.txt&quot;</span>,</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>                           <span class="st">&quot;Chem_47C_3bio_Proteins.txt&quot;</span>,</span>
@@ -465,7 +467,8 @@ match exactly.</li>
 <code>ms_clean()</code>.<br />
 By default the Contaminant proteins (“Cont_” in protein ID), Bos taurus
 proteins, Keratin family proteins, Bovine serum proteins, and Human
-Trypsin enzymes are removed.<br />
+Trypsin enzymes are removed. The default parameter for prefixcontaminant
+is “Cont”.<br />
 By default the orphan proteins that even only appear in one of the
 datasets are NOT removed, however you can specify
 <code>remsinglecondprot=TRUE</code>, these orphan proteins will be

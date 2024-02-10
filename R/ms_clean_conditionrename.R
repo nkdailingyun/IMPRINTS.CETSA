@@ -4,7 +4,7 @@
 #'
 #' @param data dataset to be cleaned up
 #' @param nread number of reading channels or sample treatments, default value 10
-#' @param prefixcontaminant Character corresponding to the prefix used to identify contaminants.
+#' @param prefixcontaminant character corresponding to the prefix used to identify contaminants
 #' @param remkeratin whether to remove Keratin protein, which is generally
 #' considered as a common contaminant, default set to TRUE
 #' @param remserum whether to remove Serum albumin protein, which is
@@ -22,7 +22,7 @@
 #'
 #'
 
-ms_clean <- function(data, nread=10, prefixcontaminant="", remkeratin=TRUE,
+ms_clean <- function(data, nread=10, prefixcontaminant="Cont_", remkeratin=TRUE,
                      remserum=TRUE, remtrypsin=TRUE, remsinglecondprot=FALSE) {
 
   # add variable name to output

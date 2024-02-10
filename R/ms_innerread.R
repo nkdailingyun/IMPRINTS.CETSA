@@ -9,8 +9,8 @@
 #' @param fdrcontrol whether to check the protein FDR confidence level
 #' @param refchannel names of reference channel used in Proteome Discoverer search, such as 126
 #' @param channels names of the read-in channels
-#' @param software Software used to obtain Protein Group files. Either PD, MaxQuant or pFind.
-#'   Default is PD
+#' @param software software used to process the IMPRINTS-CETSA raw data and obtain ProteinGroup files.
+#' Either Proteome Discoverer (PD) or MaxQuant is currently supported. Default is PD.
 #'
 #' @keywords internal
 #'
